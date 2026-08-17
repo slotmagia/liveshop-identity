@@ -5,6 +5,9 @@ set -Eeuo pipefail
 : "${CI_COMMIT_SHA:?CI_COMMIT_SHA is required}"
 : "${CI_COMMIT_SHORT_SHA:?CI_COMMIT_SHORT_SHA is required}"
 : "${CI_PIPELINE_ID:?CI_PIPELINE_ID is required}"
+: "${CI_REGISTRY:?CI_REGISTRY is required}"
+: "${CI_REGISTRY_USER:?CI_REGISTRY_USER is required}"
+: "${CI_REGISTRY_PASSWORD:?CI_REGISTRY_PASSWORD is required}"
 : "${CI_REGISTRY_IMAGE:?CI_REGISTRY_IMAGE is required}"
 : "${MODULE_NAME:?MODULE_NAME is required}"
 : "${MODULE_ID:?MODULE_ID is required}"
@@ -20,6 +23,9 @@ release_dir="$releases_root/$release_key"
 current_link="$deploy_root/current"
 workspace_root="$(cd "$(dirname "$CI_PROJECT_DIR")" && pwd -P)"
 export KERNEL_ROOT="$workspace_root/kernel-go"
+
+printf '%s' "$CI_REGISTRY_PASSWORD" | docker login "$CI_REGISTRY" --username "$CI_REGISTRY_USER" --password-stdin
+trap 'docker logout "$CI_REGISTRY" >/dev/null 2>&1 || true' EXIT
 
 install -d -m 0750 "$releases_root"
 exec 9>"/opt/liveshop/deploy/.lock"
