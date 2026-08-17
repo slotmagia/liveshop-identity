@@ -1,0 +1,12 @@
+{
+  "name": "@liveshop/identity-workspace",
+  "private": true,
+  "version": "0.6.10",
+  "workspaces": [
+    "frontend-*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  }
+}

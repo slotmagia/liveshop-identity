@@ -1,0 +1,151 @@
+/* An iframe contribution renders in its own document, so it loads the whole
+   back-office layer itself: tokens plus the shared component classes. This is
+   the same stylesheet the Host uses, which is why a contribution looks
+   identical inside the platform console and the merchant console. */
+@import '@liveshop/design-tokens/console.css';
+
+/* Domain layout for Identity goes here, and nothing else. Buttons,
+   cards, forms, tables, prices and dialogs come from the shared kit: a module
+   that redefines them is the reason the two consoles drifted apart before.
+   Use the tokens rather than literal values, and never write
+   `var(--ls-token, #fallback)` — a missing token must fail visibly instead of
+   quietly rendering a second palette. */
+.identity-merch-layout {
+  display: grid;
+  gap: 12px;
+}
+
+.identity-privacy-form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.identity-privacy-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.identity-privacy-overlay {
+  display: grid;
+  gap: 8px;
+}
+
+.identity-profile-form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.identity-shop-settings-form {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+}
+
+.identity-profile-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+}
+
+.identity-plan-grid,
+.identity-subscription-current {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.identity-plan-grid {
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.identity-plan-item {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-md);
+  background: var(--ls-surface-subtle);
+}
+
+.identity-plan-heading,
+.identity-plan-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.identity-plan-name {
+  margin: 0;
+  color: var(--ls-ink);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.identity-plan-price {
+  margin: 0;
+  color: var(--ls-ink);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.identity-plan-cycle,
+.identity-plan-quota,
+.identity-plan-description,
+.identity-subscription-current p,
+.identity-subscription-empty {
+  margin: 0;
+  color: var(--ls-muted);
+  font-size: 13px;
+}
+
+.identity-plan-description {
+  white-space: pre-wrap;
+}
+
+.identity-plan-permissions {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ls-ink);
+  font-size: 13px;
+}
+
+.identity-account-layout {
+  display: grid;
+  gap: 12px;
+}
+
+.identity-account-body {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.identity-account-heading,
+.identity-account-inline,
+.identity-account-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.identity-account-section {
+  display: grid;
+  gap: 8px;
+}
+
+.identity-account-caption {
+  margin: 0;
+  color: var(--ls-ink);
+  font-size: 13px;
+  font-weight: 650;
+}

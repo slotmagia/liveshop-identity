@@ -1,0 +1,16 @@
+/* An iframe contribution renders in its own document, so it loads the whole
+   back-office layer itself: tokens plus the shared component classes. This is
+   the same stylesheet the Host uses, which is why a contribution looks
+   identical inside the platform console and the merchant console. */
+@import '@liveshop/design-tokens/console.css';
+
+/* Domain layout for Identity goes here, and nothing else. Buttons,
+   cards, forms, tables, prices and dialogs come from the shared kit: a module
+   that redefines them is the reason the two consoles drifted apart before.
+   Use the tokens rather than literal values, and never write
+   `var(--ls-token, #fallback)` — a missing token must fail visibly instead of
+   quietly rendering a second palette. */
+.identity-admin-layout {
+  display: grid;
+  gap: 12px;
+}

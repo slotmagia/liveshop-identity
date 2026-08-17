@@ -1,0 +1,8 @@
+go 1.25.0
+
+// Local development wires the two units together. Release CI resolves the
+// published protocol module instead of using this workspace.
+use (
+	./business/backend
+	./protocol
+)

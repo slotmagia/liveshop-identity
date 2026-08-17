@@ -1,0 +1,19 @@
+{
+  "name": "@liveshop/identity-merch",
+  "version": "0.6.20",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@liveshop/design-tokens": "file:../../../liveshop-platform/business/packages/design-tokens",
+    "@liveshop/host-sdk": "file:../../../liveshop-platform/business/packages/host-sdk"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}

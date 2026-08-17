@@ -1,0 +1,14 @@
+version: 1
+rules:
+  - from: backend/internal/identity/biz
+    allow: [standard-library]
+    deny: [goframe, grpc, sql, application, data, common, other-module-internal]
+  - from: backend/internal/identity/data
+    allow: [biz, database-driver]
+    deny: [goframe, grpc, application, common, other-module-internal]
+  - from: backend/internal/identity/application
+    allow: [biz, common, kernel-go]
+    deny: [sql, mysql-driver, data, other-surface, other-module-internal]
+release:
+  immutable_key: metadata.id+metadata.version
+  require_artifact_digest: true

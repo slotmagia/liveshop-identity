@@ -1,0 +1,7 @@
+version: 1
+workspace:
+  owner: identity-team
+repositories:
+  module.json: {owner: identity-team, reviewers: [architecture]}
+  ../protocol: {owner: identity-team, reviewers: [architecture]}
+  backend/internal/identity: {owner: identity-team, reviewers: [identity-team]}

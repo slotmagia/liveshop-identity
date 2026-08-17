@@ -1,0 +1,64 @@
+# Complete Identity configuration. The process reads only this file and
+# refuses to start when a field is missing, so fill every placeholder below
+# rather than relying on a default that does not exist.
+service: identity
+
+log:
+  level: info
+  json: true
+
+server:
+  http: ":8092"
+  grpc: ":9092"
+
+database:
+  # REQUIRED. user:password@tcp(host:3306)/identity?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_0900_ai_ci
+  url: ""
+  max_open_connections: 40
+  max_idle_connections: 10
+  connection_max_lifetime: 30m
+  connection_max_idle_time: 5m
+
+module_capability:
+  issuer: liveshop-identity
+  key_id: ""
+  private_key: ""
+  ttl: 5m
+
+access_identity:
+  issuer: liveshop-identity
+  key_id: ""
+  private_key: ""
+  access_ttl: 15m
+  refresh_ttl: 720h
+  platform_refresh_cookie: liveshop_platform_refresh
+  merchant_refresh_cookie: liveshop_merchant_refresh
+  customer_refresh_cookie: liveshop_customer_refresh
+  cookie_secure: true
+
+grpc:
+  platform_spiffe_id: spiffe://liveshop.local/platform
+  catalog_spiffe_id: spiffe://liveshop.local/catalog
+  tls:
+    certificate_file: ""
+    private_key_file: ""
+    client_ca_file: ""
+
+platform_registry:
+  endpoint: "dns:///platform:9082"
+  server_name: "platform"
+  max_staleness: 2m
+  sync_interval: 15s
+  tls:
+    certificate_file: ""
+    private_key_file: ""
+    client_ca_file: ""
+
+subscription_entitlement:
+  max_staleness: 2m
+  sync_interval: 15s
+
+compose:
+  trade_origin: ""
+  platform_origin: ""
+  internal_token: ""

@@ -1,0 +1,61 @@
+service: identity
+
+log:
+  level: info
+  json: true
+
+server:
+  http: ":8092"
+  grpc: ":9092"
+
+database:
+  url: "liveshop:liveshop-local@tcp(identity-db:3306)/liveshop_identity?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_0900_ai_ci"
+  max_open_connections: 40
+  max_idle_connections: 10
+  connection_max_lifetime: 30m
+  connection_max_idle_time: 5m
+
+module_capability:
+  issuer: liveshop-identity
+  key_id: module-capability-dev-1
+  private_key: nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A
+  ttl: 5m
+
+access_identity:
+  issuer: liveshop-identity
+  key_id: access-identity-dev-1
+  # Local-only development key. Production must inject a separately managed key.
+  private_key: TM0Imyj_ltqdtsNG7BFOD1uKMZ81q6Yk2oz27U-4pvs
+  access_ttl: 15m
+  refresh_ttl: 720h
+  platform_refresh_cookie: liveshop_platform_refresh
+  merchant_refresh_cookie: liveshop_merchant_refresh
+  customer_refresh_cookie: liveshop_customer_refresh
+  cookie_secure: false
+
+grpc:
+  platform_spiffe_id: spiffe://liveshop.local/platform
+  catalog_spiffe_id: spiffe://liveshop.local/catalog
+  tls:
+    certificate_file: /run/grpc/identity-server.pem
+    private_key_file: /run/grpc/identity-server-key.pem
+    client_ca_file: /run/grpc/ca.pem
+
+platform_registry:
+  endpoint: dns:///platform:9082
+  server_name: platform
+  max_staleness: 2m
+  sync_interval: 15s
+  tls:
+    certificate_file: /run/grpc/identity-client.pem
+    private_key_file: /run/grpc/identity-client-key.pem
+    client_ca_file: /run/grpc/ca.pem
+
+subscription_entitlement:
+  max_staleness: 2m
+  sync_interval: 15s
+
+compose:
+  trade_origin: http://trade:8090
+  platform_origin: http://platform:8082
+  internal_token: liveshop-local-internal-grant

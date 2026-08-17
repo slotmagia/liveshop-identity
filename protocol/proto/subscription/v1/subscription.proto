@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package liveshop.subscription.v1;
+
+option go_package = "github.com/lvtuopen-ai/liveshop-identity/protocol/gen/go/subscription/v1;subscriptionv1";
+
+// SubscriptionService publishes entitlement facts to trusted workloads.
+// Usage is deliberately absent: the module that owns a resource owns its count.
+service SubscriptionService {
+  rpc Check(CheckRequest) returns (CheckResponse);
+  rpc GetQuotaLimit(GetQuotaLimitRequest) returns (GetQuotaLimitResponse);
+  rpc GetQuotaLimits(GetQuotaLimitsRequest) returns (GetQuotaLimitsResponse);
+  rpc GetMerchantPermissionEntitlementSnapshot(GetMerchantPermissionEntitlementSnapshotRequest) returns (GetMerchantPermissionEntitlementSnapshotResponse);
+}
+
+message CheckRequest {}
+message CheckResponse { string status = 1; }
+
+message GetQuotaLimitRequest {
+  int64 merchant_id = 1;
+  string quota_code = 2;
+  int64 evaluated_at_unix_ms = 3;
+}
+
+message GetQuotaLimitsRequest {
+  int64 merchant_id = 1;
+  repeated string quota_codes = 2;
+  int64 evaluated_at_unix_ms = 3;
+}
+
+message QuotaLimit {
+  string quota_code = 1;
+  bool unlimited = 2;
+  int64 limit = 3;
+  int64 revision = 4;
+  int64 effective_from_unix_ms = 5;
+  int64 effective_until_unix_ms = 6;
+}
+
+message GetQuotaLimitResponse { QuotaLimit quota = 1; }
+message GetQuotaLimitsResponse { repeated QuotaLimit quotas = 1; }
+
+message GetMerchantPermissionEntitlementSnapshotRequest {
+  int64 merchant_id = 1;
+}
+
+// This is a complete current-state snapshot, not a delta. An empty
+// permission_codes list with revision > 0 explicitly means no permission is
+// entitled; a missing merchant fact is returned as FAILED_PRECONDITION.
+message GetMerchantPermissionEntitlementSnapshotResponse {
+  int64 merchant_id = 1;
+  repeated string permission_codes = 2;
+  int64 revision = 3;
+  string snapshot_digest = 4;
+  int64 updated_at_unix_ms = 5;
+}

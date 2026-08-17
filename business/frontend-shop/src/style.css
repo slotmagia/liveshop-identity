@@ -1,0 +1,34 @@
+.identity-profile { min-height: 100vh; color: var(--ls-shop-ink); background: var(--ls-shop-page); }
+.identity-profile__layout { width: min(900px, 100%); display: flex; flex-direction: column; gap: 16px; margin: 0 auto; padding: 24px; }
+.identity-profile__hero { padding: 20px; border-radius: 20px; color: var(--ls-shop-on-dark); background: var(--ls-shop-chrome); box-shadow: var(--ls-shop-card-shadow); }
+.identity-profile__brand { margin: 0; color: var(--ls-shop-gold); font-size: 15px; font-weight: 900; letter-spacing: .06em; }
+.identity-profile__identity { display: block; margin-top: 12px; padding: 0; border: 0; color: inherit; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.identity-profile__identity b { display: block; font-size: 29px; font-weight: 900; line-height: 1.2; }
+.identity-profile__identity span { display: block; margin-top: 12px; color: var(--ls-shop-hero-copy); font-size: 16px; line-height: 1.25; }
+.identity-profile__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 16px; }
+.identity-profile__stats button { height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 0; border-radius: 13px; color: inherit; background: rgb(var(--ls-shop-white-rgb) / .1); font: inherit; cursor: pointer; }
+.identity-profile__stats strong { font-size: 17px; font-weight: 900; }
+.identity-profile__stats span { color: var(--ls-shop-hero-copy); font-size: 13px; }
+.identity-profile__signin { width: 100%; height: 50px; margin-top: 12px; border: 0; border-radius: 14px; color: var(--ls-shop-ink); background: var(--ls-shop-gold); font: inherit; font-size: 15px; font-weight: 900; cursor: pointer; }
+.identity-profile__card { padding: 16px; border-radius: 16px; background: var(--ls-surface); box-shadow: var(--ls-shop-card-shadow); }
+.identity-profile__section-head { display: flex; align-items: center; justify-content: space-between; }
+.identity-profile__card h2 { margin: 0; color: var(--ls-shop-ink); font-size: 22px; font-weight: 900; line-height: 1.2; }
+.identity-profile__section-head button { border: 0; color: var(--ls-shop-accent); background: transparent; font: inherit; font-size: 14px; font-weight: 900; cursor: pointer; }
+.identity-profile__balance { display: block; margin-top: 24px; color: var(--ls-shop-ink); font-size: 38px; font-weight: 900; line-height: 1; }
+.identity-profile__wallet > p { margin: 20px 0 0; color: var(--ls-shop-muted); font-size: 15px; }
+.identity-profile__shortcuts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+.identity-profile__shortcuts button { min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
+.identity-profile__shortcuts span { width: 52px; height: 52px; display: grid; place-items: center; border-radius: 13px; color: var(--ls-shop-ink); background: var(--ls-shop-search); font-size: 17px; font-weight: 900; }
+.identity-profile__shortcuts b { max-width: 100%; overflow: hidden; color: var(--ls-shop-ink); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.identity-profile__rows > h2 { margin-bottom: 8px; }
+.identity-profile__rows > button { width: 100%; display: flex; align-items: center; gap: 12px; padding: 17px 0; border: 0; border-bottom: 1px solid var(--ls-shop-card-line); color: var(--ls-shop-ink); background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.identity-profile__rows > button:last-child { border-bottom: 0; }
+.identity-profile__rows > button > span { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; background: var(--ls-shop-search); font-weight: 900; }
+.identity-profile__rows > button > b { min-width: 0; flex: 1; font-size: 16px; font-weight: 900; }
+.identity-profile__rows > button > i { color: var(--ls-shop-muted); font-size: 24px; font-style: normal; }
+@media (max-width: 1023px) {
+  .identity-profile__layout { width: min(560px, 100%); padding: 16px; }
+}
+@media (max-width: 767px) {
+  .identity-profile__layout { width: 100%; zoom: .85; }
+}

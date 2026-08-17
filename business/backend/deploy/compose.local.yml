@@ -1,0 +1,126 @@
+name: liveshop-identity-local
+
+services:
+  identity-db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: liveshop_identity
+      MYSQL_USER: liveshop
+      MYSQL_PASSWORD: liveshop-local
+      MYSQL_ROOT_PASSWORD: liveshop-local-root
+    command:
+      [
+        "--default-time-zone=+00:00",
+        "--character-set-server=utf8mb4",
+        "--collation-server=utf8mb4_0900_ai_ci",
+      ]
+    ports: ["127.0.0.1:33072:3306"]
+    volumes: ["identity-db-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uliveshop", "-pliveshop-local"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  identity-migrate:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../protocol, platform-protocol: ../../../../liveshop-platform/protocol}
+    entrypoint: ["/app/identity-migrate"]
+    command:
+      [
+        "-dsn",
+        "liveshop:liveshop-local@tcp(identity-db:3306)/liveshop_identity?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_0900_ai_ci",
+        "-dir",
+        "/app/migrations",
+      ]
+    depends_on:
+      identity-db: {condition: service_healthy}
+
+  identity:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../protocol, platform-protocol: ../../../../liveshop-platform/protocol}
+    command: ["-config", "/app/configs/identity.compose.yaml"]
+    ports: ["127.0.0.1:8092:8092"]
+    volumes: ["grpc-certs:/run/grpc:ro"]
+    user: "65532:65532"
+    read_only: true
+    tmpfs: ["/tmp"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    depends_on:
+      identity-seed-local: {condition: service_completed_successfully}
+
+  identity-seed-local:
+    image: mysql:8.4
+    environment: {MYSQL_PWD: liveshop-local}
+    volumes: ["../tools/seed-local.sql:/seed.sql:ro"]
+    command: ["sh", "-ec", "mysql --default-character-set=utf8mb4 -h identity-db -uliveshop liveshop_identity < /seed.sql"]
+    depends_on:
+      identity-migrate: {condition: service_completed_successfully}
+
+  identity-admin:
+    build:
+      context: ../..
+      dockerfile: backend/deploy/frontend.Dockerfile
+      additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
+      args: {SOURCE_DIR: frontend-admin}
+    ports: ["127.0.0.1:5201:8080"]
+    read_only: true
+    tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    depends_on: [identity]
+
+  identity-merch:
+    build:
+      context: ../..
+      dockerfile: backend/deploy/frontend.Dockerfile
+      additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
+      args: {SOURCE_DIR: frontend-merch}
+    ports: ["127.0.0.1:5202:8080"]
+    read_only: true
+    tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    depends_on: [identity]
+
+  identity-shop:
+    build:
+      context: ../..
+      dockerfile: backend/deploy/frontend.Dockerfile
+      additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
+      args: {SOURCE_DIR: frontend-shop}
+    ports: ["127.0.0.1:5203:8080"]
+    read_only: true
+    tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    depends_on: [identity]
+
+  identity-live:
+    build:
+      context: ../..
+      dockerfile: backend/deploy/frontend.Dockerfile
+      additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
+      args: {SOURCE_DIR: frontend-live}
+    ports: ["127.0.0.1:5204:8080"]
+    read_only: true
+    tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    depends_on: [identity]
+
+volumes:
+  identity-db-data:
+  grpc-certs:
+    name: liveshop-grpc-certs
+    external: true
+
+networks:
+  default:
+    name: liveshop-local
+    external: true
