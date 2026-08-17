@@ -7,6 +7,7 @@ COPY ui ./ui
 ARG SOURCE_DIR
 COPY ${SOURCE_DIR} ./${SOURCE_DIR}
 RUN npm ci
+RUN npx --no-install tsc -p /workspace/liveshop-platform/business/packages/host-sdk/tsconfig.json
 RUN npm run build --workspace="@liveshop/identity-${SOURCE_DIR#frontend-}" && mkdir -p /out && cp -R "${SOURCE_DIR}/dist/." /out/
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine
