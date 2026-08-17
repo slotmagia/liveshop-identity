@@ -37,6 +37,7 @@ jq   --arg version "$LIVESHOP_RELEASE_VERSION"   --arg origin "$BACKEND_ORIGIN" 
       end
     | .spec.contributions |= map(
         ($artifacts[.surface] // error("missing artifact for surface " + .surface)) as $artifact
+        | .artifact.version = $version
         | .artifact.entry = $artifact.entry
         | .artifact.integrity = $artifact.integrity
       )
