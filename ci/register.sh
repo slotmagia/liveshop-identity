@@ -46,10 +46,20 @@ workload_token="$(
   docker run --rm     -e WORKLOAD_PRIVATE_KEY     -e WORKLOAD_KEY_ID     -e WORKLOAD_ISSUER     -e WORKLOAD_SUBJECT     -e WORKLOAD_AUDIENCE     -v "$KERNEL_ROOT:/src:ro"     -w /src     golang:1.25-alpine     go run ./cmd/workloadtoken
 )"
 
-curl -fsS   --header "Authorization: Bearer $workload_token"   --header 'Content-Type: application/json; charset=utf-8'   --data-binary "@$manifest_file"   "$PLATFORM_REGISTRY_URL/releases"   > "$release_response"
+release_status="$(curl -sS -o "$release_response" -w '%{http_code}'   --header "Authorization: Bearer $workload_token"   --header 'Content-Type: application/json; charset=utf-8'   --data-binary "@$manifest_file"   "$PLATFORM_REGISTRY_URL/releases")"
+if [ "$release_status" -lt 200 ] || [ "$release_status" -ge 300 ]; then
+  printf 'Release registration failed with HTTP %s: ' "$release_status" >&2
+  jq -c '{code,message,data}' "$release_response" >&2 || cat "$release_response" >&2
+  exit 1
+fi
 test "$(jq -r '.code' "$release_response")" = "0"
 
-jq -nc   --arg moduleId "$MODULE_ID"   --arg version "$LIVESHOP_RELEASE_VERSION"   '{moduleId: $moduleId, version: $version}'   | curl -fsS       --header "Authorization: Bearer $workload_token"       --header 'Content-Type: application/json; charset=utf-8'       --data-binary @-       "$PLATFORM_REGISTRY_URL/activate"       > "$activation_response"
+activation_status="$(jq -nc   --arg moduleId "$MODULE_ID"   --arg version "$LIVESHOP_RELEASE_VERSION"   '{moduleId: $moduleId, version: $version}'   | curl -sS -o "$activation_response" -w '%{http_code}'       --header "Authorization: Bearer $workload_token"       --header 'Content-Type: application/json; charset=utf-8'       --data-binary @-       "$PLATFORM_REGISTRY_URL/activate")"
+if [ "$activation_status" -lt 200 ] || [ "$activation_status" -ge 300 ]; then
+  printf 'Release activation failed with HTTP %s: ' "$activation_status" >&2
+  jq -c '{code,message,data}' "$activation_response" >&2 || cat "$activation_response" >&2
+  exit 1
+fi
 test "$(jq -r '.code' "$activation_response")" = "0"
 
 printf 'Activated module %s release %s\n' "$MODULE_ID" "$LIVESHOP_RELEASE_VERSION"
