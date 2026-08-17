@@ -27,9 +27,9 @@ variables:
   READINESS_URL: "http://127.0.0.1:18092/readyz"
   READINESS_MODE: "success"
   REGISTER_MODULE: "true"
-  BACKEND_ORIGIN: "http://identity:8092"
-  GRPC_ENDPOINT: "dns:///identity:9092"
-  ARTIFACT_URLS: '{"admin":"http://192.168.5.140:5201","merch":"http://192.168.5.140:5202","shop":"http://192.168.5.140:5203/identity-shop.js","live":"http://192.168.5.140:5204/identity-live.js"}'
+  BACKEND_ORIGIN: "http://identity:18092"
+  GRPC_ENDPOINT: "dns:///identity:19092"
+  ARTIFACT_URLS: '{"admin":"http://192.168.5.140:15201","merch":"http://192.168.5.140:15202","shop":"http://192.168.5.140:15203/identity-shop.js","live":"http://192.168.5.140:15204/identity-live.js"}'
 
 build_images:
   stage: build

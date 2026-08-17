@@ -13,4 +13,4 @@ RUN npm run build --workspace="@liveshop/identity-${SOURCE_DIR#frontend-}" && mk
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 COPY backend/deploy/nginx.frontend.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /out /usr/share/nginx/html
-EXPOSE 8080
+EXPOSE 18080

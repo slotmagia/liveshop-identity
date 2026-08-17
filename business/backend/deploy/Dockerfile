@@ -25,5 +25,5 @@ COPY --from=build /workspace/backend/configs /app/configs
 COPY --from=build /workspace/backend/migrations /app/migrations
 WORKDIR /app
 USER liveshop:liveshop
-HEALTHCHECK --interval=5s --timeout=3s --retries=12 CMD nc -z 127.0.0.1 8092 || exit 1
+HEALTHCHECK --interval=5s --timeout=3s --retries=12 CMD nc -z 127.0.0.1 18092 || exit 1
 ENTRYPOINT ["/app/identity"]

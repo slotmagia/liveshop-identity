@@ -44,7 +44,7 @@ services:
       dockerfile: deploy/Dockerfile
       additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../protocol, platform-protocol: ../../../../liveshop-platform/protocol}
     command: ["-config", "/app/configs/identity.compose.yaml"]
-    ports: ["127.0.0.1:8092:8092"]
+    ports: ["127.0.0.1:18092:18092"]
     volumes: ["grpc-certs:/run/grpc:ro"]
     user: "65532:65532"
     read_only: true
@@ -68,7 +68,7 @@ services:
       dockerfile: backend/deploy/frontend.Dockerfile
       additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
       args: {SOURCE_DIR: frontend-admin}
-    ports: ["127.0.0.1:5201:8080"]
+    ports: ["127.0.0.1:15201:18080"]
     read_only: true
     tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
     security_opt: ["no-new-privileges:true"]
@@ -81,7 +81,7 @@ services:
       dockerfile: backend/deploy/frontend.Dockerfile
       additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
       args: {SOURCE_DIR: frontend-merch}
-    ports: ["127.0.0.1:5202:8080"]
+    ports: ["127.0.0.1:15202:18080"]
     read_only: true
     tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
     security_opt: ["no-new-privileges:true"]
@@ -94,7 +94,7 @@ services:
       dockerfile: backend/deploy/frontend.Dockerfile
       additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
       args: {SOURCE_DIR: frontend-shop}
-    ports: ["127.0.0.1:5203:8080"]
+    ports: ["127.0.0.1:15203:18080"]
     read_only: true
     tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
     security_opt: ["no-new-privileges:true"]
@@ -107,7 +107,7 @@ services:
       dockerfile: backend/deploy/frontend.Dockerfile
       additional_contexts: {platform-packages: ../../../../liveshop-platform/business/packages}
       args: {SOURCE_DIR: frontend-live}
-    ports: ["127.0.0.1:5204:8080"]
+    ports: ["127.0.0.1:15204:18080"]
     read_only: true
     tmpfs: ["/tmp", "/var/cache/nginx", "/var/run"]
     security_opt: ["no-new-privileges:true"]

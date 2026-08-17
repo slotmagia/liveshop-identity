@@ -6,20 +6,20 @@ services:
   identity:
     image: ${LIVESHOP_IMAGE_PREFIX}/backend:${LIVESHOP_IMAGE_TAG}
     build: !reset null
-    ports: !override ["127.0.0.1:18092:8092"]
+    ports: !override ["127.0.0.1:18092:18092"]
   identity-admin:
     image: ${LIVESHOP_IMAGE_PREFIX}/frontend-admin:${LIVESHOP_IMAGE_TAG}
     build: !reset null
-    ports: !override ["192.168.5.140:5201:8080"]
+    ports: !override ["192.168.5.140:15201:18080"]
   identity-merch:
     image: ${LIVESHOP_IMAGE_PREFIX}/frontend-merch:${LIVESHOP_IMAGE_TAG}
     build: !reset null
-    ports: !override ["192.168.5.140:5202:8080"]
+    ports: !override ["192.168.5.140:15202:18080"]
   identity-shop:
     image: ${LIVESHOP_IMAGE_PREFIX}/frontend-shop:${LIVESHOP_IMAGE_TAG}
     build: !reset null
-    ports: !override ["192.168.5.140:5203:8080"]
+    ports: !override ["192.168.5.140:15203:18080"]
   identity-live:
     image: ${LIVESHOP_IMAGE_PREFIX}/frontend-live:${LIVESHOP_IMAGE_TAG}
     build: !reset null
-    ports: !override ["192.168.5.140:5204:8080"]
+    ports: !override ["192.168.5.140:15204:18080"]

@@ -21,7 +21,7 @@
 
 ```powershell
 npm install
-npm run dev     # 127.0.0.1:5191
+npm run dev     # 127.0.0.1:15191
 npm run build   # tsc --noEmit + vite build
 ```
 

@@ -1,11 +1,11 @@
 param(
-  [string]$PlatformUrl = 'http://127.0.0.1:8082',
-  [string]$BackendOrigin = 'http://identity:8092',
-  [string]$GRPCEndpoint = 'dns:///identity:9092',
-  [string]$AdminArtifactUrl = 'http://127.0.0.1:5201',
-  [string]$MerchArtifactUrl = 'http://127.0.0.1:5202',
-  [string]$ShopArtifactUrl = 'http://127.0.0.1:5203/identity-shop.js',
-  [string]$LiveArtifactUrl = 'http://127.0.0.1:5204/identity-live.js'
+  [string]$PlatformUrl = 'http://127.0.0.1:18082',
+  [string]$BackendOrigin = 'http://identity:18092',
+  [string]$GRPCEndpoint = 'dns:///identity:19092',
+  [string]$AdminArtifactUrl = 'http://127.0.0.1:15201',
+  [string]$MerchArtifactUrl = 'http://127.0.0.1:15202',
+  [string]$ShopArtifactUrl = 'http://127.0.0.1:15203/identity-shop.js',
+  [string]$LiveArtifactUrl = 'http://127.0.0.1:15204/identity-live.js'
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))

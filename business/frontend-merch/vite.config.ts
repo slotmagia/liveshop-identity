@@ -4,6 +4,6 @@ import { defineConfig } from 'vite'
 // normal application and `entry` in module.json points at where it is served.
 export default defineConfig({
   base: './',
-  server: { host: '127.0.0.1', port: 5202, strictPort: true },
+  server: { host: '127.0.0.1', port: 15202, strictPort: true },
   build: { outDir: 'dist', emptyOutDir: true, sourcemap: true },
 })

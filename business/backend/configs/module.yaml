@@ -8,8 +8,8 @@ log:
   json: true
 
 server:
-  http: ":8092"
-  grpc: ":9092"
+  http: ":18092"
+  grpc: ":19092"
 
 database:
   # REQUIRED. user:password@tcp(host:3306)/identity?parseTime=true&loc=UTC&charset=utf8mb4&collation=utf8mb4_0900_ai_ci
@@ -45,7 +45,7 @@ grpc:
     client_ca_file: ""
 
 platform_registry:
-  endpoint: "dns:///platform:9082"
+  endpoint: "dns:///platform:19082"
   server_name: "platform"
   max_staleness: 2m
   sync_interval: 15s
