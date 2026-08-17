@@ -43,11 +43,11 @@ raw_version=""
 if [ -f "$release_dir/business/module.json" ]; then
   raw_version="$(jq -r '.metadata.version' "$release_dir/business/module.json")"
 fi
-base_version="${raw_version%%-*}"
-if [ -n "$base_version" ]; then
-  release_version="$base_version-ci.$CI_PIPELINE_ID.$CI_COMMIT_SHORT_SHA"
+if [[ "$raw_version" =~ ^([0-9]+)\.([0-9]+)\.[0-9]+$ ]]; then
+  release_version="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$CI_PIPELINE_ID"
 else
-  release_version=""
+  printf 'Module manifest version must be strict X.Y.Z: %s\n' "$raw_version" >&2
+  exit 1
 fi
 
 cat > "$release_dir/.env" <<EOF
