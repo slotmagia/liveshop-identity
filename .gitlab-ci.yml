@@ -19,6 +19,7 @@ default:
 variables:
   GIT_DEPTH: "20"
   DOCKER_BUILDKIT: "1"
+  PLATFORM_REGISTRY_URL: "http://127.0.0.1:18082/internal/v1/module-registry"
   MODULE_NAME: "liveshop-identity"
   MODULE_ID: "identity"
   DEPENDENCY_REPOSITORIES: "kernel-go liveshop-platform"
@@ -48,4 +49,3 @@ deploy_test:
   script:
     - bash ci/prepare-contexts.sh
     - bash ci/deploy.sh
-

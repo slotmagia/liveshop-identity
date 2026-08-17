@@ -4,6 +4,7 @@ set -Eeuo pipefail
 : "${MODULE_ID:?MODULE_ID is required}"
 : "${LIVESHOP_RELEASE_VERSION:?LIVESHOP_RELEASE_VERSION is required}"
 : "${BACKEND_ORIGIN:?BACKEND_ORIGIN is required}"
+: "${PLATFORM_REGISTRY_URL:?PLATFORM_REGISTRY_URL is required}"
 : "${ARTIFACT_URLS:?ARTIFACT_URLS is required}"
 : "${KERNEL_ROOT:?KERNEL_ROOT is required}"
 : "${WORKLOAD_PRIVATE_KEY:?WORKLOAD_PRIVATE_KEY is required}"
@@ -45,11 +46,10 @@ workload_token="$(
   docker run --rm     -e WORKLOAD_PRIVATE_KEY     -e WORKLOAD_KEY_ID     -e WORKLOAD_ISSUER     -e WORKLOAD_SUBJECT     -e WORKLOAD_AUDIENCE     -v "$KERNEL_ROOT:/src:ro"     -w /src     golang:1.25-alpine     go run ./cmd/workloadtoken
 )"
 
-curl -fsS   --header "Authorization: Bearer $workload_token"   --header 'Content-Type: application/json; charset=utf-8'   --data-binary "@$manifest_file"   'http://127.0.0.1:8082/internal/v1/module-registry/releases'   > "$release_response"
+curl -fsS   --header "Authorization: Bearer $workload_token"   --header 'Content-Type: application/json; charset=utf-8'   --data-binary "@$manifest_file"   "$PLATFORM_REGISTRY_URL/releases"   > "$release_response"
 test "$(jq -r '.code' "$release_response")" = "0"
 
-jq -nc   --arg moduleId "$MODULE_ID"   --arg version "$LIVESHOP_RELEASE_VERSION"   '{moduleId: $moduleId, version: $version}'   | curl -fsS       --header "Authorization: Bearer $workload_token"       --header 'Content-Type: application/json; charset=utf-8'       --data-binary @-       'http://127.0.0.1:8082/internal/v1/module-registry/activate'       > "$activation_response"
+jq -nc   --arg moduleId "$MODULE_ID"   --arg version "$LIVESHOP_RELEASE_VERSION"   '{moduleId: $moduleId, version: $version}'   | curl -fsS       --header "Authorization: Bearer $workload_token"       --header 'Content-Type: application/json; charset=utf-8'       --data-binary @-       "$PLATFORM_REGISTRY_URL/activate"       > "$activation_response"
 test "$(jq -r '.code' "$activation_response")" = "0"
 
 printf 'Activated module %s release %s\n' "$MODULE_ID" "$LIVESHOP_RELEASE_VERSION"
-
