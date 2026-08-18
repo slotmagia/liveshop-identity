@@ -376,7 +376,7 @@ func assignmentValid(kind model.AssignmentKind, shops []int64) bool {
 	if kind == model.AssignmentAnchor {
 		return len(shops) == 1
 	}
-	return kind == model.AssignmentOperate
+	return kind == model.AssignmentOperate && len(shops) >= 1
 }
 
 func normalizedIDs(values []int64) []int64 {

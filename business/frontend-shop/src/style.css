@@ -26,6 +26,18 @@
 .identity-profile__rows > button > span { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; background: var(--ls-shop-search); font-weight: 900; }
 .identity-profile__rows > button > b { min-width: 0; flex: 1; font-size: 16px; font-weight: 900; }
 .identity-profile__rows > button > i { color: var(--ls-shop-muted); font-size: 24px; font-style: normal; }
+.identity-login { min-height: 100vh; color: var(--ls-shop-ink); background: var(--ls-shop-page); }
+.identity-login__card { width: min(420px, 100%); margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+.identity-login__brand { margin: 0; color: var(--ls-shop-gold); font-size: 15px; font-weight: 900; letter-spacing: .06em; }
+.identity-login__card h1 { margin: 0; font-size: 28px; font-weight: 900; }
+.identity-login__copy { margin: 0; color: var(--ls-shop-muted); font-size: 14px; line-height: 1.4; }
+.identity-login__field { display: flex; flex-direction: column; gap: 6px; color: var(--ls-shop-ink); font-size: 13px; font-weight: 700; }
+.identity-login__field input { height: 44px; padding: 0 12px; border: 1px solid var(--ls-shop-card-line); border-radius: 12px; color: var(--ls-shop-ink); background: var(--ls-surface); font: inherit; font-weight: 500; }
+.identity-login__primary, .identity-login__secondary { height: 48px; border: 0; border-radius: 14px; font: inherit; font-size: 15px; font-weight: 900; cursor: pointer; }
+.identity-login__primary { color: var(--ls-shop-ink); background: var(--ls-shop-gold); }
+.identity-login__secondary { color: var(--ls-shop-ink); background: var(--ls-shop-search); }
+.identity-login__link { border: 0; background: transparent; color: var(--ls-shop-accent); font: inherit; font-weight: 700; cursor: pointer; }
+.identity-login__primary:disabled, .identity-login__secondary:disabled { opacity: .6; cursor: default; }
 @media (max-width: 1023px) {
   .identity-profile__layout { width: min(560px, 100%); padding: 16px; }
 }

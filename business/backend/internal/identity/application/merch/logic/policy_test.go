@@ -43,6 +43,30 @@ func (s stubShopRepo) GetManagedShop(ctx context.Context, merchantID, shopID int
 	}
 	return shopmodel.Shop{}, shopmodel.ErrNotFound
 }
+func (s stubShopRepo) GetShopByCode(ctx context.Context, code string) (shopmodel.Shop, error) {
+	items, err := s.ListShops(ctx, 2001)
+	if err != nil {
+		return shopmodel.Shop{}, err
+	}
+	for _, item := range items {
+		if item.Code == code {
+			return item, nil
+		}
+	}
+	return shopmodel.Shop{}, shopmodel.ErrNotFound
+}
+func (s stubShopRepo) GetShopBySubdomain(ctx context.Context, subdomain string) (shopmodel.Shop, error) {
+	items, err := s.ListShops(ctx, 2001)
+	if err != nil {
+		return shopmodel.Shop{}, err
+	}
+	for _, item := range items {
+		if item.Subdomain == subdomain {
+			return item, nil
+		}
+	}
+	return shopmodel.Shop{}, shopmodel.ErrNotFound
+}
 func (stubShopRepo) CreateShop(_ context.Context, command shopmodel.CreateCommand) (shopmodel.Shop, bool, error) {
 	return shopmodel.Shop{
 		ID: 3002, MerchantID: command.MerchantID, Code: "shop-3002", Subdomain: command.Subdomain, Name: command.Name,
@@ -105,7 +129,7 @@ func merchPolicyLogic(items []governancemodel.Capability) *Logic {
 			Content: "这是一份足够长的店铺服务条款正文。", VersionNo: 1, Status: shopmodel.PolicyDraft, Version: 1,
 			CreatedAt: time.Unix(1, 0), UpdatedAt: time.Unix(1, 0),
 		}},
-	}), nil, merchant_governance.NewCapabilities(stubGovernanceRepo{items: items}), Subscription{}, nil, nil, nil)
+	}), nil, merchant_governance.NewCapabilities(stubGovernanceRepo{items: items}), Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func merchPolicyContext() context.Context {

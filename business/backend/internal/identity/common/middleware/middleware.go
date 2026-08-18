@@ -89,6 +89,16 @@ func RequirePermission(permission string) ghttp.HandlerFunc {
 	}
 }
 
+func RequireSurface(surface string) ghttp.HandlerFunc {
+	return func(request *ghttp.Request) {
+		if request.Header.Get("X-Liveshop-Surface") != surface {
+			deny(request, http.StatusForbidden, "surface header is required", surface)
+			return
+		}
+		request.Middleware.Next()
+	}
+}
+
 // deny logs the decision before answering. An access denial the operator cannot
 // see is indistinguishable from a broken client.
 func deny(request *ghttp.Request, status int, message, subject string) {

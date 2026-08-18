@@ -8,6 +8,7 @@
 - `privacy.go`：店铺隐私 GET/保存用例；平台叠加层由 merch 逻辑读取 merchant governance，不进入本仓储。
 - `policy.go`：店铺政策列表、保存新版本和发布草稿；平台叠加层仍由 merchant governance 拥有。
 - `app.go`：店铺私有应用列表、创建、轮换密钥和启停；平台叠加层仍由 merchant governance 拥有。
+- `domain.go`：店铺自定义域名绑定、TXT 校验和设为主域名；直播页固定 `LIVE`；平台叠加层仍由 merchant governance 拥有。CNAME 目标与证书不入库。
 - 商户后台店铺生命周期：分页目录、当前会话店铺读取、新建、编辑名称/子域名、启停和关闭；写命令仅 `MERCHANT_OWNER`。
 - `../../data/shop/`：生产仓储适配器的目标目录。
 

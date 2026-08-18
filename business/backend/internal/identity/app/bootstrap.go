@@ -10,6 +10,8 @@ import (
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/internalgrant"
 	merchlogic "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/merch/logic"
 	merchrouter "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/merch/router"
+	shoplogic "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/shop/logic"
+	shoprouter "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/shop/router"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/common/server"
 )
 
@@ -31,13 +33,23 @@ func NewServer(dependencies *Dependencies) *server.Server {
 		{
 			Name: merchrouter.Surface,
 			Register: func(root *ghttp.RouterGroup) {
+				merch := merchlogic.New(dependencies.Health, dependencies.Directory, dependencies.Authorization, dependencies.Users, dependencies.Shops, dependencies.Privacy, dependencies.Policies, dependencies.Apps, dependencies.MerchantGovernance, merchlogic.Subscription{
+					Plans: dependencies.Plans, Assignments: dependencies.Assignments,
+					Permissions: dependencies.PermissionPlans, Quotas: dependencies.SubscriptionQuotas, Orders: dependencies.Orders,
+				}, dependencies.Merchants, dependencies.ShopCategories, dependencies.RiskEvents, dependencies.CustomerService, dependencies.Complaints, dependencies.Domains, dependencies.Aftersales, dependencies.Shipments, dependencies.Shipping)
+				merch.UseGrants(dependencies.Grants)
 				merchrouter.RegisterHTTP(root, merchrouter.Deps{
-					Application: merchlogic.New(dependencies.Health, dependencies.Directory, dependencies.Authorization, dependencies.Users, dependencies.Shops, dependencies.Privacy, dependencies.Policies, dependencies.Apps, dependencies.MerchantGovernance, merchlogic.Subscription{
-						Plans: dependencies.Plans, Assignments: dependencies.Assignments,
-						Permissions: dependencies.PermissionPlans, Quotas: dependencies.SubscriptionQuotas, Orders: dependencies.Orders,
-					}, dependencies.Merchants, dependencies.ShopCategories, dependencies.RiskEvents),
+					Application:          merch,
 					ModuleSessions:       dependencies.ModuleSessions,
 					CurrentAuthorization: dependencies.Users,
+				})
+			},
+		},
+		{
+			Name: shoprouter.Surface,
+			Register: func(root *ghttp.RouterGroup) {
+				shoprouter.RegisterHTTP(root, shoprouter.Deps{
+					Application: shoplogic.New(dependencies.Health, dependencies.OTP),
 				})
 			},
 		},
@@ -52,7 +64,7 @@ func NewServer(dependencies *Dependencies) *server.Server {
 		surfaces = append(surfaces, server.Surface{
 			Name: "internal-directory",
 			Register: func(root *ghttp.RouterGroup) {
-				internalgrant.Register(root, dependencies.Config.Compose.InternalToken, dependencies.Merchants, dependencies.Shops)
+				internalgrant.Register(root, dependencies.Config.Compose.InternalToken, dependencies.Merchants, dependencies.Shops, dependencies.Domains, dependencies.MerchantGovernance)
 			},
 		})
 	}

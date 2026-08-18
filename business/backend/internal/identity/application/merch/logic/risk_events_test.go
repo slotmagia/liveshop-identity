@@ -32,7 +32,7 @@ func (s *stubRiskRepo) List(_ context.Context, query riskmodel.Query) (riskmodel
 }
 
 func merchRiskLogic(repo *stubRiskRepo) *Logic {
-	return New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, risk.NewEvents(repo))
+	return New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, risk.NewEvents(repo), nil, nil, nil, nil, nil, nil)
 }
 
 func merchRiskContext() context.Context {

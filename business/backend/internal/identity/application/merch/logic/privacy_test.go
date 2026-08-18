@@ -44,14 +44,14 @@ func merchPrivacyContext() context.Context {
 }
 
 func TestPrivacyRequiresShopContext(t *testing.T) {
-	logic := New(nil, nil, nil, nil, nil, shop.NewPrivacySettings(stubPrivacyRepo{}), nil, nil, merchant_governance.NewCapabilities(stubGovernanceRepo{}), Subscription{}, nil, nil, nil)
+	logic := New(nil, nil, nil, nil, nil, shop.NewPrivacySettings(stubPrivacyRepo{}), nil, nil, merchant_governance.NewCapabilities(stubGovernanceRepo{}), Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if _, err := logic.Privacy(context.Background()); !errors.Is(err, model.ErrInvalidContext) {
 		t.Fatalf("error=%v", err)
 	}
 }
 
 func TestPrivacyReturnsDefaultsWhenOverlayIsUnset(t *testing.T) {
-	logic := New(nil, nil, nil, nil, nil, shop.NewPrivacySettings(stubPrivacyRepo{}), nil, nil, merchant_governance.NewCapabilities(stubGovernanceRepo{}), Subscription{}, nil, nil, nil)
+	logic := New(nil, nil, nil, nil, nil, shop.NewPrivacySettings(stubPrivacyRepo{}), nil, nil, merchant_governance.NewCapabilities(stubGovernanceRepo{}), Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	value, err := logic.Privacy(merchPrivacyContext())
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +65,7 @@ func TestSavePrivacyIsDeniedWhenPlatformOverlayRestricts(t *testing.T) {
 	logic := New(nil, nil, nil, nil, nil, shop.NewPrivacySettings(stubPrivacyRepo{}), nil, nil, merchant_governance.NewCapabilities(stubGovernanceRepo{items: []governancemodel.Capability{{
 		ID: 9, MerchantID: 2001, ShopID: 3001, Module: "privacy", PlatformStatus: governancemodel.PlatformRestricted,
 		PlatformReasonPublic: "平台限制该店铺隐私设置", Version: 1,
-	}}}), Subscription{}, nil, nil, nil)
+	}}}), Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	value, err := logic.Privacy(merchPrivacyContext())
 	if err != nil || value.Editable || value.PlatformStatus != "restricted" {
 		t.Fatalf("privacy=%+v err=%v", value, err)

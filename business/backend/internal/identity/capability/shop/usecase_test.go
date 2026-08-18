@@ -33,6 +33,22 @@ func (s stubRepository) GetManagedShop(_ context.Context, merchantID, shopID int
 	}
 	return model.Shop{}, model.ErrNotFound
 }
+func (s stubRepository) GetShopByCode(_ context.Context, code string) (model.Shop, error) {
+	for _, value := range s.values {
+		if value.Code == code {
+			return value, nil
+		}
+	}
+	return model.Shop{}, model.ErrNotFound
+}
+func (s stubRepository) GetShopBySubdomain(_ context.Context, subdomain string) (model.Shop, error) {
+	for _, value := range s.values {
+		if value.Subdomain == subdomain {
+			return value, nil
+		}
+	}
+	return model.Shop{}, model.ErrNotFound
+}
 func (stubRepository) CreateShop(context.Context, model.CreateCommand) (model.Shop, bool, error) {
 	return model.Shop{}, false, nil
 }
@@ -104,6 +120,24 @@ func TestGetManagedRequiresMerchantAndShop(t *testing.T) {
 		t.Fatalf("value=%+v err=%v", value, err)
 	}
 	if _, err := directory.GetManaged(context.Background(), 7, 999); !errors.Is(err, model.ErrNotFound) {
+		t.Fatalf("missing error=%v", err)
+	}
+}
+
+func TestGetBySlugPrefersCodeThenSubdomain(t *testing.T) {
+	directory := NewDirectory(stubRepository{values: []model.Shop{
+		{ID: 1, MerchantID: 7, Code: "acme", Subdomain: "other", Name: "Code Shop", Currency: "CNY", Status: model.StatusActive, Version: 1},
+		{ID: 2, MerchantID: 8, Code: "other", Subdomain: "brand", Name: "Sub Shop", Currency: "CNY", Status: model.StatusActive, Version: 1},
+	}})
+	byCode, err := directory.GetBySlug(context.Background(), "acme")
+	if err != nil || byCode.ID != 1 {
+		t.Fatalf("code=%+v err=%v", byCode, err)
+	}
+	bySub, err := directory.GetBySlug(context.Background(), "brand")
+	if err != nil || bySub.ID != 2 {
+		t.Fatalf("subdomain=%+v err=%v", bySub, err)
+	}
+	if _, err := directory.GetBySlug(context.Background(), "missing"); !errors.Is(err, model.ErrNotFound) {
 		t.Fatalf("missing error=%v", err)
 	}
 }

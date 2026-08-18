@@ -57,7 +57,7 @@ func (s *stubAppRepo) SetAppEnabled(_ context.Context, command shopmodel.SetAppE
 
 func merchAppLogic(items []governancemodel.Capability) (*Logic, *stubAppRepo) {
 	repo := &stubAppRepo{items: []shopmodel.App{sampleApp()}}
-	return New(nil, nil, nil, nil, shop.NewDirectory(stubShopRepo{}), nil, nil, shop.NewPrivateApps(repo), merchant_governance.NewCapabilities(stubGovernanceRepo{items: items}), Subscription{}, nil, nil, nil), repo
+	return New(nil, nil, nil, nil, shop.NewDirectory(stubShopRepo{}), nil, nil, shop.NewPrivateApps(repo), merchant_governance.NewCapabilities(stubGovernanceRepo{items: items}), Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil), repo
 }
 
 func TestAppShopsRequiresMerchantContext(t *testing.T) {

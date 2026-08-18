@@ -95,7 +95,7 @@ func merchSubscriptionOrderLogic(plans []subscriptionmodel.Plan, current subscri
 		Plans:       subscription.NewPlans(stubPlanRepo{plans: plans, policy: subscriptionmodel.PlanPolicy{Revision: 1}}),
 		Assignments: subscription.NewAssignments(stubAssignmentRepo{current: current}),
 		Orders:      subscription.NewOrders(orders),
-	}, nil, nil, nil)
+	}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func TestSubscriptionPlansHideInactiveAndMarkBuyable(t *testing.T) {

@@ -15,6 +15,24 @@ import (
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/config"
 )
 
+func TestHTTPComposeReadsEdgeSnapshot(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/internal/v1/edge/snapshot" {
+			t.Fatalf("path=%s", request.URL.Path)
+		}
+		_ = json.NewEncoder(writer).Encode(map[string]any{
+			"code": 0,
+			"data": EdgeSnapshot{CNAMETarget: "edge.example", ShopDomain: "shop.example", ReservedHosts: []string{"shop.example"}},
+		})
+	}))
+	t.Cleanup(server.Close)
+	client := NewHTTP(config.Compose{PlatformOrigin: server.URL, InternalToken: "secret-token"})
+	value, err := client.EdgeSnapshot(context.Background())
+	if err != nil || value.CNAMETarget != "edge.example" || value.ShopDomain != "shop.example" {
+		t.Fatalf("value=%+v err=%v", value, err)
+	}
+}
+
 func TestUnavailableGrantsSurfaceMerchantError(t *testing.T) {
 	var grants Grants = Unavailable{}
 	if _, err := grants.PaymentChannels(context.Background(), 2001, 3001); !errors.Is(err, model.ErrUnavailable) {

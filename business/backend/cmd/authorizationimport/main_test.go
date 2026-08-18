@@ -51,7 +51,7 @@ func TestFreshLocalPlatformAdminCanManageLiveProviders(t *testing.T) {
 	for _, permission := range freshLocalManifest().PlatformPermissions {
 		permissions[permission] = true
 	}
-	for _, required := range []string{"platform.live-provider.read", "platform.live-provider.manage", "platform.sms.read", "platform.sms.manage", "platform.email.read", "platform.email.manage", "platform.storage.read", "platform.storage.manage", "trade.payment-config.read", "trade.payment-config.manage"} {
+	for _, required := range []string{"platform.live-provider.read", "platform.live-provider.manage", "platform.sms.read", "platform.sms.manage", "platform.email.read", "platform.email.manage", "platform.storage.read", "platform.storage.manage", "platform.notify-event.read", "platform.notify-event.manage", "platform.notify-template.read", "platform.notify-template.manage", "platform.notify-channel.read", "platform.notify-channel.manage", "trade.payment-config.read", "trade.payment-config.manage"} {
 		if !permissions[required] {
 			t.Fatalf("fresh-local administrator is missing %s", required)
 		}

@@ -71,6 +71,25 @@ type ListRes struct {
 	PageSize int      `json:"pageSize"`
 	Total    int64    `json:"total"`
 }
+type CreateReq struct {
+	g.Meta         `path:"/members" method:"post" tags:"Identity-Members"`
+	IdempotencyKey string  `json:"idempotencyKey"`
+	OperationID    string  `json:"operationId"`
+	DisplayName    string  `json:"displayName"`
+	MemberType     string  `json:"memberType"`
+	Username       string  `json:"username"`
+	Password       string  `json:"password"`
+	UnitIDs        []int64 `json:"unitIds"`
+	ShopIDs        []int64 `json:"shopIds"`
+	RoleIDs        []int64 `json:"roleIds"`
+}
+type CreateRes struct {
+	MemberID    int64  `json:"memberId"`
+	Subject     string `json:"subject"`
+	Status      string `json:"status"`
+	OperationID string `json:"operationId"`
+	Version     uint64 `json:"version"`
+}
 type DetailReq struct {
 	g.Meta  `path:"/members/{subject}" method:"get" tags:"Identity-Members"`
 	Subject string `json:"subject" in:"path"`

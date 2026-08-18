@@ -10,7 +10,9 @@ import (
 	"github.com/lvtuopen-ai/kernel-go/logctx"
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz/model"
+	authmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth/model"
 	customerservicemodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service/model"
+	fulfillmentmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment/model"
 	merchantmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant/model"
 	governancemodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant_governance/model"
 	riskmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/risk/model"
@@ -103,6 +105,12 @@ var domainStatus = []struct {
 	{shopmodel.ErrAppIdempotency, http.StatusConflict},
 	{shopmodel.ErrAppInvalid, http.StatusBadRequest},
 	{shopmodel.ErrAppRestricted, http.StatusForbidden},
+	{shopmodel.ErrDomainNotFound, http.StatusNotFound},
+	{shopmodel.ErrDomainConflict, http.StatusConflict},
+	{shopmodel.ErrDomainIdempotency, http.StatusConflict},
+	{shopmodel.ErrDomainInvalid, http.StatusBadRequest},
+	{shopmodel.ErrDomainRestricted, http.StatusForbidden},
+	{shopmodel.ErrDomainUnavailable, http.StatusServiceUnavailable},
 	{customerservicemodel.ErrUnavailable, http.StatusServiceUnavailable},
 	{customerservicemodel.ErrNotFound, http.StatusNotFound},
 	{customerservicemodel.ErrConflict, http.StatusConflict},
@@ -111,11 +119,32 @@ var domainStatus = []struct {
 	{riskmodel.ErrUnavailable, http.StatusServiceUnavailable},
 	{riskmodel.ErrNotFound, http.StatusNotFound},
 	{riskmodel.ErrInvalid, http.StatusBadRequest},
+	{fulfillmentmodel.ErrUnavailable, http.StatusServiceUnavailable},
+	{fulfillmentmodel.ErrNotFound, http.StatusNotFound},
+	{fulfillmentmodel.ErrInvalid, http.StatusBadRequest},
+	{fulfillmentmodel.ErrConflict, http.StatusConflict},
+	{fulfillmentmodel.ErrIdempotency, http.StatusConflict},
+	{fulfillmentmodel.ErrAftersaleUnavailable, http.StatusServiceUnavailable},
+	{fulfillmentmodel.ErrAftersaleNotFound, http.StatusNotFound},
+	{fulfillmentmodel.ErrAftersaleInvalid, http.StatusBadRequest},
+	{fulfillmentmodel.ErrAftersaleConflict, http.StatusConflict},
+	{fulfillmentmodel.ErrAftersaleIdempotency, http.StatusConflict},
+	{fulfillmentmodel.ErrShippingUnavailable, http.StatusServiceUnavailable},
+	{fulfillmentmodel.ErrShippingNotFound, http.StatusNotFound},
+	{fulfillmentmodel.ErrShippingInvalid, http.StatusBadRequest},
+	{fulfillmentmodel.ErrShippingConflict, http.StatusConflict},
+	{fulfillmentmodel.ErrShippingIdempotency, http.StatusConflict},
+	{fulfillmentmodel.ErrShippingRestricted, http.StatusForbidden},
 	{governancemodel.ErrUnavailable, http.StatusServiceUnavailable},
 	{governancemodel.ErrNotFound, http.StatusNotFound},
 	{governancemodel.ErrConflict, http.StatusConflict},
 	{governancemodel.ErrIdempotency, http.StatusConflict},
 	{governancemodel.ErrInvalid, http.StatusBadRequest},
+	{authmodel.ErrUnavailable, http.StatusServiceUnavailable},
+	{authmodel.ErrInvalid, http.StatusBadRequest},
+	{authmodel.ErrNotFound, http.StatusNotFound},
+	{authmodel.ErrExpired, http.StatusConflict},
+	{authmodel.ErrDeliveryFailed, http.StatusServiceUnavailable},
 }
 
 // Failure maps an application error to its transport status. Anything that is

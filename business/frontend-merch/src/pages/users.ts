@@ -1,6 +1,6 @@
 import type { HostContext, HostHttpClient } from '@liveshop/host-sdk'
 import { hostFormModal } from '@liveshop/host-sdk'
-import { badge, button, dataCard, page, pagination, searchCard, searchForm, statusLine, table, ui } from '@liveshop/design-tokens'
+import { badge, button, dataCard, notify, page, pagination, searchCard, searchForm, table, ui } from '@liveshop/design-tokens'
 
 interface Shop { id: number; merchantId: number; name: string; code: string; status: string }
 interface Role { id: number; code: string; name: string; status: string; systemRole: boolean }
@@ -90,7 +90,6 @@ function optionTree(
 export async function renderUsers(root: HTMLElement, api: HostHttpClient, context: HostContext): Promise<void> {
   const canManage = context.permissions.includes('identity.staff.manage')
   const canSessions = context.permissions.includes('identity.session.manage')
-  const state = statusLine()
   const memberTable = table({
     columns: ['姓名', '登录账号', '类型', '角色', '店铺范围', '状态', '活动会话', '操作'],
     empty: '暂无员工或主播',
@@ -128,7 +127,6 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
     },
     onReset: () => {
       currentPage = 1
-      currentPageSize = 20
       filter.set({ keyword: '', type: '', status: '', shopId: '' })
       void loadMembers()
     },
@@ -181,7 +179,7 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
   }
 
   async function loadMembers(): Promise<void> {
-    state.set('正在加载员工…')
+    filter.setBusy(true)
     try {
       const values = filter.values()
       const query = new URLSearchParams({
@@ -198,12 +196,13 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
       currentPageSize = pageResult.pageSize
       renderRows()
       pager.set({ page: pageResult.page, pageSize: pageResult.pageSize, total: pageResult.total })
-      state.set(`共 ${pageResult.total} 名员工 / 主播`)
     } catch (error) {
       rows = []
       renderRows()
       pager.set({ page: 1, pageSize: currentPageSize, total: 0 })
-      state.set(`员工加载失败：${String(error)}`, 'danger')
+      notify(`员工加载失败：${String(error)}`, 'danger')
+    } finally {
+      filter.setBusy(false)
     }
   }
 
@@ -266,7 +265,7 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
 
   function openEditor(item?: Member): void {
     if (!options.roles.length) {
-      state.set('没有可分配的活动角色，请先在角色管理中创建。', 'warning')
+      notify('没有可分配的活动角色，请先在角色管理中创建。', 'warning')
       return
     }
     const modal = hostFormModal({
@@ -392,7 +391,7 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
 
   function openReset(item: Member): void {
     if (!item.credential.id) {
-      state.set('该成员没有可重置的登录凭据。', 'warning')
+      notify('该成员没有可重置的登录凭据。', 'warning')
       return
     }
     const modal = hostFormModal({
@@ -446,7 +445,7 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
       })
       modal.open()
     } catch (error) {
-      state.set(String(error), 'danger')
+      notify(String(error), 'danger')
     }
   }
 
@@ -460,7 +459,6 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
       dataCard({
         title: '员工与主播',
         actions: toolbar,
-        status: state.element,
         body: memberTable.element,
         footer: pager.element,
       }),
@@ -474,6 +472,6 @@ export async function renderUsers(root: HTMLElement, api: HostHttpClient, contex
     options = { shops: [], roles: [], units: [] }
     rows = []
     renderRows()
-    state.set(`用户管理页面加载失败：${String(error)}`, 'danger')
+    notify(`用户管理页面加载失败：${String(error)}`, 'danger')
   }
 }

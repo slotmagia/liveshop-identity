@@ -425,6 +425,71 @@ type AppToggleResult struct {
 	Replayed bool `json:"replayed"`
 }
 
+type DomainShop struct {
+	ShopID     int64  `json:"shopId"`
+	MerchantID int64  `json:"merchantId"`
+	Name       string `json:"name"`
+	Code       string `json:"code"`
+	Status     string `json:"status"`
+}
+
+type DomainQuery struct {
+	ShopID   int64
+	Scene    string
+	Status   string
+	Page     int
+	PageSize int
+}
+
+type Domain struct {
+	ID             int64     `json:"id"`
+	MerchantID     int64     `json:"merchantId"`
+	ShopID         int64     `json:"shopId"`
+	Host           string    `json:"host"`
+	Scene          string    `json:"scene"`
+	Status         string    `json:"status"`
+	IsPrimary      bool      `json:"isPrimary"`
+	TxtName        string    `json:"txtName"`
+	TxtValue       string    `json:"txtValue"`
+	CnameTarget    string    `json:"cnameTarget,omitempty"`
+	Version        uint64    `json:"version"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+	PlatformStatus string    `json:"platformStatus"`
+	PlatformReason string    `json:"platformReasonPublic"`
+	Editable       bool      `json:"editable"`
+}
+
+type DomainPage struct {
+	Items          []Domain `json:"items"`
+	Page           int      `json:"page"`
+	PageSize       int      `json:"pageSize"`
+	Total          int64    `json:"total"`
+	CnameTarget    string   `json:"cnameTarget,omitempty"`
+	PlatformStatus string   `json:"platformStatus"`
+	PlatformReason string   `json:"platformReasonPublic"`
+}
+
+type CreateDomain struct {
+	CommandKey string
+	ShopID     int64
+	Host       string
+	Scene      string
+}
+
+type DomainWrite struct {
+	DomainID        int64
+	ShopID          int64
+	CommandKey      string
+	ExpectedVersion uint64
+	Scene           string
+}
+
+type DomainResult struct {
+	Domain   Domain `json:"domain"`
+	Replayed bool   `json:"replayed"`
+}
+
 type SubscriptionPlan struct {
 	ID              int64    `json:"id"`
 	Code            string   `json:"code"`
@@ -669,4 +734,405 @@ type RiskEventPage struct {
 	Page     int
 	PageSize int
 	Total    int64
+}
+
+type ComplaintQuery struct {
+	CustomerSubject string
+	Status          string
+	TargetType      string
+	Page            int
+	PageSize        int
+}
+
+type Complaint struct {
+	ID              int64
+	CustomerSubject string
+	TargetType      string
+	TargetID        int64
+	ReasonCode      string
+	Content         string
+	Status          string
+	HandleNote      string
+	Version         uint64
+	CreatedAt       string
+	UpdatedAt       string
+	HandledAt       *string
+}
+
+type ComplaintPage struct {
+	Items    []Complaint
+	Page     int
+	PageSize int
+	Total    int64
+}
+
+type ReviewComplaint struct {
+	ComplaintID     int64
+	CommandKey      string
+	ExpectedVersion uint64
+	Status          string
+	HandleNote      string
+}
+
+type ComplaintResult struct {
+	Complaint Complaint
+	Replayed  bool
+}
+
+type AftersaleQuery struct {
+	CustomerSubject string
+	Status          string
+	Type            string
+	Page            int
+	PageSize        int
+}
+
+type AftersaleItem struct {
+	ID               int64
+	SKUID            int64
+	Title            string
+	Quantity         int64
+	RefundAmount     int64
+	ReceivedQuantity int64
+}
+
+type Aftersale struct {
+	ID              int64
+	CustomerSubject string
+	OrderID         int64
+	PaymentNo       string
+	Type            string
+	RequestedAmount int64
+	Amount          int64
+	Reason          string
+	Status          string
+	ReturnStatus    string
+	HandleNote      string
+	Items           []AftersaleItem
+	Version         uint64
+	CreatedAt       string
+	UpdatedAt       string
+	ReviewedAt      *string
+	ReceivedAt      *string
+}
+
+type AftersalePage struct {
+	Items    []Aftersale
+	Page     int
+	PageSize int
+	Total    int64
+}
+
+type ReviewAftersale struct {
+	AftersaleID     int64
+	CommandKey      string
+	ExpectedVersion uint64
+	Status          string
+	Amount          int64
+	HandleNote      string
+}
+
+type ReceiveAftersale struct {
+	AftersaleID     int64
+	CommandKey      string
+	ExpectedVersion uint64
+}
+
+type AftersaleResult struct {
+	Aftersale Aftersale
+	Replayed  bool
+}
+
+type ShipmentQuery struct {
+	OrderID  int64
+	Status   string
+	Page     int
+	PageSize int
+}
+
+type ShipmentTrace struct {
+	OccurredAt string
+	Node       string
+}
+
+type Shipment struct {
+	ID         int64
+	OrderID    int64
+	Carrier    string
+	TrackingNo string
+	Status     string
+	Traces     []ShipmentTrace
+	Version    uint64
+	CreatedAt  string
+	UpdatedAt  string
+}
+
+type ShipmentPage struct {
+	Items    []Shipment
+	Page     int
+	PageSize int
+	Total    int64
+}
+
+type CreateShipment struct {
+	CommandKey string
+	OrderID    int64
+	Carrier    string
+	TrackingNo string
+}
+
+type CreateShipmentTrace struct {
+	ShipmentID      int64
+	CommandKey      string
+	ExpectedVersion uint64
+	Node            string
+}
+
+type CloseShipment struct {
+	ShipmentID      int64
+	CommandKey      string
+	ExpectedVersion uint64
+}
+
+type ShipmentResult struct {
+	Shipment Shipment
+	Replayed bool
+}
+
+type ShippingShop struct {
+	ShopID     int64
+	MerchantID int64
+	Name       string
+	Code       string
+	Status     string
+}
+
+type ShippingQuery struct {
+	ShopID   int64
+	Status   string
+	Page     int
+	PageSize int
+}
+
+type ShippingRule struct {
+	ID                   int64
+	MerchantID           int64
+	ShopID               int64
+	Name                 string
+	Regions              string
+	FeeFen               int64
+	FreeOverFen          int64
+	MinDays              int
+	MaxDays              int
+	SortOrder            int
+	Status               string
+	Version              uint64
+	CreatedAt            string
+	UpdatedAt            string
+	PlatformStatus       string
+	PlatformReasonPublic string
+	Editable             bool
+}
+
+type ShippingRulePage struct {
+	Items                []ShippingRule
+	Page                 int
+	PageSize             int
+	Total                int64
+	PlatformStatus       string
+	PlatformReasonPublic string
+}
+
+type SaveShippingRule struct {
+	ID              int64
+	ShopID          int64
+	CommandKey      string
+	ExpectedVersion uint64
+	Name            string
+	Regions         string
+	FeeFen          int64
+	FreeOverFen     int64
+	MinDays         int
+	MaxDays         int
+	SortOrder       int
+	Status          string
+}
+
+type RetireShipping struct {
+	ID              int64
+	ShopID          int64
+	CommandKey      string
+	ExpectedVersion uint64
+}
+
+type ShippingRuleResult struct {
+	Rule     ShippingRule
+	Replayed bool
+}
+
+type ShippingRegion struct {
+	RegionCode      string
+	RegionName      string
+	CountryCode     string
+	CountryName     string
+	SubdivisionCode string
+	SubdivisionName string
+}
+
+type ShippingRate struct {
+	ID          int64
+	Name        string
+	IsFree      bool
+	PriceFen    int64
+	TransitType string
+	MinDays     int
+	MaxDays     int
+	SortOrder   int
+	Status      string
+}
+
+type ShippingZone struct {
+	ID        int64
+	Name      string
+	SortOrder int
+	Regions   []ShippingRegion
+	Rates     []ShippingRate
+}
+
+type ShippingPreset struct {
+	ID                    int64
+	MerchantID            int64
+	ShopID                int64
+	Name                  string
+	IsDefault             bool
+	ProductScope          string
+	ProductIDs            []int64
+	OriginName            string
+	OriginRegionCode      string
+	OriginRegionName      string
+	OriginCountryCode     string
+	OriginCountryName     string
+	OriginSubdivisionCode string
+	OriginSubdivisionName string
+	Status                string
+	Zones                 []ShippingZone
+	Version               uint64
+	CreatedAt             string
+	UpdatedAt             string
+	PlatformStatus        string
+	PlatformReasonPublic  string
+	Editable              bool
+}
+
+type ShippingPresetPage struct {
+	Items                []ShippingPreset
+	Page                 int
+	PageSize             int
+	Total                int64
+	PlatformStatus       string
+	PlatformReasonPublic string
+}
+
+type SaveShippingPreset struct {
+	ID                    int64
+	ShopID                int64
+	CommandKey            string
+	ExpectedVersion       uint64
+	Name                  string
+	IsDefault             bool
+	ProductScope          string
+	ProductIDs            []int64
+	OriginName            string
+	OriginRegionCode      string
+	OriginRegionName      string
+	OriginCountryCode     string
+	OriginCountryName     string
+	OriginSubdivisionCode string
+	OriginSubdivisionName string
+	Status                string
+	Zones                 []ShippingZone
+}
+
+type SetShippingPresetEnabled struct {
+	PresetID        int64
+	ShopID          int64
+	CommandKey      string
+	ExpectedVersion uint64
+	Enabled         bool
+}
+
+type ShippingPresetResult struct {
+	Preset   ShippingPreset
+	Replayed bool
+}
+
+type CustomerAccountShop struct {
+	ShopID     int64  `json:"shopId"`
+	MerchantID int64  `json:"merchantId"`
+	Name       string `json:"name"`
+	Code       string `json:"code"`
+	Status     string `json:"status"`
+}
+
+type CustomerAccountQuery struct {
+	ShopID   int64
+	Platform string
+	Account  string
+	Status   string
+	Page     int
+	PageSize int
+}
+
+type CustomerAccount struct {
+	ID         int64  `json:"id"`
+	MerchantID int64  `json:"merchantId"`
+	ShopID     int64  `json:"shopId"`
+	Platform   string `json:"platform"`
+	Account    string `json:"account"`
+	Nickname   string `json:"nickname"`
+	Status     string `json:"status"`
+	Config     string `json:"config"`
+	Remark     string `json:"remark"`
+	Version    uint64 `json:"version"`
+	CreatedAt  string `json:"createdAt"`
+	UpdatedAt  string `json:"updatedAt"`
+}
+
+type CustomerAccountPage struct {
+	Items    []CustomerAccount `json:"items"`
+	Page     int               `json:"page"`
+	PageSize int               `json:"pageSize"`
+	Total    int64             `json:"total"`
+}
+
+type SaveCustomerAccount struct {
+	CommandKey      string
+	ExpectedVersion uint64
+	ShopID          int64
+	ID              int64
+	Platform        string
+	Account         string
+	Nickname        string
+	Status          string
+	Config          string
+	Remark          string
+}
+
+type CustomerAccountResult struct {
+	Account  CustomerAccount
+	Replayed bool
+}
+
+type DeleteCustomerAccount struct {
+	AccountID       int64
+	ShopID          int64
+	CommandKey      string
+	ExpectedVersion uint64
+}
+
+type CustomerAccountDeleteResult struct {
+	ID       int64
+	Deleted  bool
+	Version  uint64
+	Replayed bool
 }

@@ -104,14 +104,14 @@ func merchStaffShopContext() context.Context {
 }
 
 func TestAccountRequiresMerchantContext(t *testing.T) {
-	logic := New(nil, biz.NewDirectory(accountDirectoryRepo{principal: ownerPrincipal(), directory: sampleDirectory()}), nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic := New(nil, biz.NewDirectory(accountDirectoryRepo{principal: ownerPrincipal(), directory: sampleDirectory()}), nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if _, err := logic.Account(context.Background()); !errors.Is(err, model.ErrInvalidContext) {
 		t.Fatalf("error=%v", err)
 	}
 }
 
 func TestAccountOverviewIsReadableByOwnerAndStaff(t *testing.T) {
-	logic := New(nil, biz.NewDirectory(accountDirectoryRepo{principal: ownerPrincipal(), directory: sampleDirectory()}), nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic := New(nil, biz.NewDirectory(accountDirectoryRepo{principal: ownerPrincipal(), directory: sampleDirectory()}), nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	owner, err := logic.Account(merchOwnerContext())
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestAccountOverviewIsReadableByOwnerAndStaff(t *testing.T) {
 		t.Fatalf("owner=%+v", owner)
 	}
 
-	logic = New(nil, biz.NewDirectory(accountDirectoryRepo{principal: staffPrincipal(), directory: sampleDirectory()}), nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic = New(nil, biz.NewDirectory(accountDirectoryRepo{principal: staffPrincipal(), directory: sampleDirectory()}), nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	staff, err := logic.Account(merchStaffShopContext())
 	if err != nil {
 		t.Fatal(err)
@@ -203,7 +203,7 @@ func merchOwnerSessionContext() context.Context {
 }
 
 func TestAccountSecurityIsReadableByOwnerAndStaff(t *testing.T) {
-	ownerLogic := New(nil, nil, nil, biz.NewUserLifecycle(&securityUsersRepo{own: ownerSecurityUser()}), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	ownerLogic := New(nil, nil, nil, biz.NewUserLifecycle(&securityUsersRepo{own: ownerSecurityUser()}), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	owner, err := ownerLogic.AccountSecurity(merchOwnerContext())
 	if err != nil {
 		t.Fatal(err)
@@ -212,7 +212,7 @@ func TestAccountSecurityIsReadableByOwnerAndStaff(t *testing.T) {
 		t.Fatalf("owner=%+v", owner)
 	}
 
-	staffLogic := New(nil, nil, nil, biz.NewUserLifecycle(&securityUsersRepo{own: staffSecurityUser()}), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	staffLogic := New(nil, nil, nil, biz.NewUserLifecycle(&securityUsersRepo{own: staffSecurityUser()}), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	staff, err := staffLogic.AccountSecurity(merchStaffShopContext())
 	if err != nil {
 		t.Fatal(err)
@@ -223,7 +223,7 @@ func TestAccountSecurityIsReadableByOwnerAndStaff(t *testing.T) {
 }
 
 func TestAccountSecurityRequiresMerchantContext(t *testing.T) {
-	logic := New(nil, nil, nil, biz.NewUserLifecycle(&securityUsersRepo{own: ownerSecurityUser()}), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic := New(nil, nil, nil, biz.NewUserLifecycle(&securityUsersRepo{own: ownerSecurityUser()}), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if _, err := logic.AccountSecurity(context.Background()); !errors.Is(err, model.ErrInvalidContext) {
 		t.Fatalf("error=%v", err)
 	}
@@ -234,7 +234,7 @@ func TestChangeOwnCredentialUsesClaimsSubjectAndSession(t *testing.T) {
 		Credential:      biz.ManagedCredential{ID: 8, Version: 4, Kind: "USERNAME", Identifier: "owner", Status: model.StatusActive},
 		RevokedSessions: 1, CurrentRetained: true,
 	}}
-	logic := New(nil, nil, nil, biz.NewUserLifecycle(repo), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic := New(nil, nil, nil, biz.NewUserLifecycle(repo), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if _, err := logic.ChangeOwnCredential(merchOwnerContext(), appmodel.ChangeOwnCredential{CommandKey: "change", ExpectedVersion: 3, OldPassword: "password-old", Password: "password-new"}); !errors.Is(err, model.ErrInvalidContext) {
 		t.Fatalf("missing session error=%v", err)
 	}

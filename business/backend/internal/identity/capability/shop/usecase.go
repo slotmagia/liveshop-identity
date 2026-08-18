@@ -2,6 +2,8 @@ package shop
 
 import (
 	"context"
+	"errors"
+	"strings"
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/shop/model"
 )
@@ -141,6 +143,35 @@ func (d *Directory) Close(ctx context.Context, command model.CloseCommand) (mode
 		return model.Shop{}, false, model.ErrInvalidShop
 	}
 	return value, replayed, nil
+}
+
+func (d *Directory) GetBySlug(ctx context.Context, slug string) (model.Shop, error) {
+	if err := d.ready(); err != nil {
+		return model.Shop{}, err
+	}
+	slug = strings.ToLower(strings.TrimSpace(slug))
+	if slug == "" {
+		return model.Shop{}, model.ErrNotFound
+	}
+	value, err := d.repository.GetShopByCode(ctx, slug)
+	if err == nil {
+		return acceptRoutableShop(value)
+	}
+	if !errors.Is(err, model.ErrNotFound) {
+		return model.Shop{}, err
+	}
+	value, err = d.repository.GetShopBySubdomain(ctx, slug)
+	if err != nil {
+		return model.Shop{}, err
+	}
+	return acceptRoutableShop(value)
+}
+
+func acceptRoutableShop(value model.Shop) (model.Shop, error) {
+	if err := value.Validate(); err != nil {
+		return model.Shop{}, err
+	}
+	return value, nil
 }
 
 func acceptManagedShop(value model.Shop, replayed bool, err error) (model.Shop, bool, error) {

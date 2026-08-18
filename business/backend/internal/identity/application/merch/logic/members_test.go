@@ -25,7 +25,7 @@ func merchStaffContext() context.Context {
 }
 
 func TestMemberReadsAndWritesAreOwnerOnly(t *testing.T) {
-	logic := New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic := New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if _, err := logic.Members(merchStaffContext(), appmodel.MemberQuery{}); !errors.Is(err, model.ErrProtectedOwner) {
 		t.Fatalf("list error=%v", err)
 	}
@@ -44,11 +44,17 @@ func TestMemberReadsAndWritesAreOwnerOnly(t *testing.T) {
 }
 
 func TestCreateMemberRejectsShortPasswordAndStaffWithoutShops(t *testing.T) {
-	logic := New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil)
+	logic := New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if _, err := logic.CreateMember(merchOwnerContext(), appmodel.CreateMember{DisplayName: "Ada", MemberType: "STAFF", Username: "ada", Password: "short", ShopIDs: []int64{101}, RoleIDs: []int64{1}}); !errors.Is(err, model.ErrConflict) {
 		t.Fatalf("short password error=%v", err)
 	}
 	if _, err := logic.CreateMember(merchOwnerContext(), appmodel.CreateMember{DisplayName: "Ada", MemberType: "STAFF", Username: "ada", Password: "password1", RoleIDs: []int64{1}}); !errors.Is(err, model.ErrInvalidAssignment) {
 		t.Fatalf("staff without shops error=%v", err)
+	}
+	if _, err := logic.CreateMember(merchOwnerContext(), appmodel.CreateMember{DisplayName: "Ada", MemberType: "STAFF", Username: "ada", Password: "password1", ShopIDs: []int64{101}}); !errors.Is(err, model.ErrConflict) {
+		t.Fatalf("missing roles error=%v", err)
+	}
+	if _, err := logic.CreateMember(merchOwnerContext(), appmodel.CreateMember{DisplayName: "Ada", MemberType: "ANCHOR", Username: "ada", Password: "password1", ShopIDs: []int64{101, 102}, RoleIDs: []int64{1}}); !errors.Is(err, model.ErrInvalidAssignment) {
+		t.Fatalf("anchor with two shops error=%v", err)
 	}
 }

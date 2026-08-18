@@ -98,7 +98,7 @@ func merchAccountSessionContext(subject string, principalType principal.Type) co
 
 func accountSessionLogic(sessions []biz.ManagedSession) (*Logic, *accountSessionRepo) {
 	repo := &accountSessionRepo{sessions: sessions}
-	return New(nil, nil, nil, biz.NewUserLifecycle(repo), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil), repo
+	return New(nil, nil, nil, biz.NewUserLifecycle(repo), nil, nil, nil, nil, nil, Subscription{}, nil, nil, nil, nil, nil, nil, nil, nil, nil), repo
 }
 
 func TestAccountSessionsRequireMerchantContext(t *testing.T) {

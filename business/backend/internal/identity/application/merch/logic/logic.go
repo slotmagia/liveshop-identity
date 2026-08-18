@@ -9,10 +9,13 @@ import (
 	"fmt"
 
 	"github.com/lvtuopen-ai/kernel-go/principal"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/admin/compose"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/merch/appmodel"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/merch/service"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz/model"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant_governance"
 	governancemodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant_governance/model"
@@ -58,17 +61,30 @@ type Logic struct {
 	payments           PaymentCollector
 	categories         *shop.Categories
 	riskEvents         *risk.Events
+	customerService    *customer_service.Accounts
+	complaints         *fulfillment.Complaints
+	aftersales         *fulfillment.Aftersales
+	shipments          *fulfillment.Shipments
+	shipping           *fulfillment.Shipping
+	domains            *shop.CustomDomains
+	grants             compose.Grants
 }
 
 var _ service.Merch = (*Logic)(nil)
 
-func New(health *biz.Health, directory *biz.Directory, authorization *biz.AuthorizationService, users *biz.UserLifecycle, shops *shop.Directory, privacy *shop.PrivacySettings, policies *shop.Policies, apps *shop.PrivateApps, merchantGovernance *merchant_governance.Capabilities, catalog Subscription, merchants *merchant.Directory, categories *shop.Categories, riskEvents *risk.Events) *Logic {
+func New(health *biz.Health, directory *biz.Directory, authorization *biz.AuthorizationService, users *biz.UserLifecycle, shops *shop.Directory, privacy *shop.PrivacySettings, policies *shop.Policies, apps *shop.PrivateApps, merchantGovernance *merchant_governance.Capabilities, catalog Subscription, merchants *merchant.Directory, categories *shop.Categories, riskEvents *risk.Events, customerService *customer_service.Accounts, complaints *fulfillment.Complaints, domains *shop.CustomDomains, aftersales *fulfillment.Aftersales, shipments *fulfillment.Shipments, shipping *fulfillment.Shipping) *Logic {
 	return &Logic{
 		health: health, directory: directory, authorization: authorization, users: users, merchants: merchants, shops: shops,
 		privacy: privacy, policies: policies, apps: apps, merchantGovernance: merchantGovernance, categories: categories,
-		riskEvents: riskEvents,
-		plans:      catalog.Plans, assignments: catalog.Assignments, permissionPlans: catalog.Permissions,
+		riskEvents: riskEvents, customerService: customerService, complaints: complaints, aftersales: aftersales, shipments: shipments, shipping: shipping, domains: domains,
+		plans: catalog.Plans, assignments: catalog.Assignments, permissionPlans: catalog.Permissions,
 		quotas: catalog.Quotas, orders: catalog.Orders, payments: catalog.Payments,
+	}
+}
+
+func (l *Logic) UseGrants(grants compose.Grants) {
+	if l != nil {
+		l.grants = grants
 	}
 }
 func (l *Logic) userScope(ctx context.Context) biz.UserScope {
@@ -204,7 +220,7 @@ func (l *Logic) CreateMember(ctx context.Context, input appmodel.CreateMember) (
 	if claims.PrincipalType != principal.TypeMerchantOwner {
 		return appmodel.Mutation{}, model.ErrProtectedOwner
 	}
-	if len(input.Password) < 8 {
+	if len(input.Password) < 8 || len(input.RoleIDs) == 0 {
 		return appmodel.Mutation{}, model.ErrConflict
 	}
 	memberType := model.MemberType(input.MemberType)
@@ -216,6 +232,9 @@ func (l *Logic) CreateMember(ctx context.Context, input appmodel.CreateMember) (
 		namespace = "SHOP"
 	}
 	if memberType == model.MemberStaff && len(input.ShopIDs) == 0 {
+		return appmodel.Mutation{}, model.ErrInvalidAssignment
+	}
+	if memberType == model.MemberAnchor && len(input.ShopIDs) != 1 {
 		return appmodel.Mutation{}, model.ErrInvalidAssignment
 	}
 	result, err := l.directory.ProvisionMember(ctx, biz.ProvisionMember{OperationID: input.OperationID, IdempotencyKey: input.IdempotencyKey, Subject: stableSubject(input.OperationID, claims.MerchantID), Realm: principal.RealmMerchant, PrincipalType: pt, DisplayName: input.DisplayName, OrganizationID: claims.OrganizationID, MerchantID: claims.MerchantID, MemberType: memberType, OrganizationUnitIDs: input.UnitIDs, ShopIDs: input.ShopIDs, AssignmentKind: kind, CredentialKind: "USERNAME", CredentialNamespace: namespace, NormalizedIdentifier: input.Username, Password: input.Password, RoleIDs: input.RoleIDs})

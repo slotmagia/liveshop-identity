@@ -12,6 +12,8 @@ type Repository interface {
 	ListShopsByMerchant(context.Context, int64) ([]model.Shop, error)
 	ListManagedShops(context.Context, model.Query) (model.Page, error)
 	GetManagedShop(context.Context, int64, int64) (model.Shop, error)
+	GetShopByCode(context.Context, string) (model.Shop, error)
+	GetShopBySubdomain(context.Context, string) (model.Shop, error)
 	CreateShop(context.Context, model.CreateCommand) (model.Shop, bool, error)
 	UpdateShop(context.Context, model.UpdateCommand) (model.Shop, bool, error)
 	SetShopEnabled(context.Context, model.SetEnabledCommand) (model.Shop, bool, error)

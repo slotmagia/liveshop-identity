@@ -4,7 +4,7 @@
   "metadata": {
     "id": "identity",
     "name": "Identity",
-    "version": "2.0.10"
+    "version": "2.0.19"
   },
   "spec": {
     "backend": {
@@ -3750,6 +3750,1640 @@
                   "fields": []
                 }
               ]
+            },
+            {
+              "id": "identity.merch.complaints.list",
+              "method": "GET",
+              "path": "/merch/identity/complaints",
+              "summary": "List shop complaints",
+              "description": "Pages complaint tickets of the session shop. Merchant and shop IDs are taken from the session. Closed shops are rejected; the browser cannot choose another shop. Empty lists are valid.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.complaint.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "customerSubject",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "Exact Identity customer subject"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "OPEN / ACCEPTED / REJECTED; empty means all"
+                },
+                {
+                  "name": "targetType",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "ORDER / AFTERSALE / LIVE / PRODUCT / OTHER; empty means all"
+                },
+                {
+                  "name": "page",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page number; default 1"
+                },
+                {
+                  "name": "pageSize",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page size; default 20, maximum 100"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Complaint page",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.complaints.get",
+              "method": "GET",
+              "path": "/merch/identity/complaints/{complaintId}",
+              "summary": "Read one shop complaint",
+              "description": "Returns one complaint of the session shop. Merchant and shop IDs are taken from the session. Closed shops and unknown IDs are not found.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.complaint.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "complaintId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Complaint identifier"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Complaint",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.complaints.review",
+              "method": "POST",
+              "path": "/merch/identity/complaints/{complaintId}/review",
+              "summary": "Review an open shop complaint",
+              "description": "Reviews an OPEN complaint of the session shop to ACCEPTED or REJECTED. Requires commandKey and expectedVersion. Same commandKey and digest replays the prior result. Closed shops are rejected.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.complaint.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "complaintId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Complaint identifier"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Observed complaint version"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "ACCEPTED or REJECTED"
+                },
+                {
+                  "name": "handleNote",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Review note; 1 to 2000 characters"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Reviewed complaint",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.aftersales.list",
+              "method": "GET",
+              "path": "/merch/identity/aftersales",
+              "summary": "List shop aftersales",
+              "description": "Pages aftersale tickets of the session shop. Merchant and shop IDs are taken from the session. Closed shops are rejected; the browser cannot choose another shop. Empty lists are valid. This slice does not refund or restock.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.aftersale.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "customerSubject",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "Exact Identity customer subject"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "PENDING / APPROVED / REJECTED / REFUNDED / CLOSED; empty means all"
+                },
+                {
+                  "name": "type",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "REFUND_ONLY / RETURN_REFUND; empty means all"
+                },
+                {
+                  "name": "page",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page number; default 1"
+                },
+                {
+                  "name": "pageSize",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page size; default 20, maximum 100"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Aftersale page",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.aftersales.get",
+              "method": "GET",
+              "path": "/merch/identity/aftersales/{aftersaleId}",
+              "summary": "Read one shop aftersale",
+              "description": "Returns one aftersale of the session shop, including line items. Merchant and shop IDs are taken from the session. Closed shops and unknown IDs are not found.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.aftersale.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "aftersaleId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Aftersale identifier"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Aftersale",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.aftersales.review",
+              "method": "POST",
+              "path": "/merch/identity/aftersales/{aftersaleId}/review",
+              "summary": "Review a pending shop aftersale",
+              "description": "Reviews a PENDING aftersale of the session shop to APPROVED or REJECTED. Requires commandKey and expectedVersion. Same commandKey and digest replays the prior result. Closed shops are rejected. Approval does not call Trade.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.aftersale.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "aftersaleId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Aftersale identifier"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Observed aftersale version"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "APPROVED or REJECTED"
+                },
+                {
+                  "name": "amount",
+                  "type": "integer",
+                  "location": "body",
+                  "required": false,
+                  "description": "Approved amount for APPROVED; 0 keeps the current amount; must be 1 to requestedAmount"
+                },
+                {
+                  "name": "handleNote",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Review note; 1 to 2000 characters"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Reviewed aftersale",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.aftersales.returns.create",
+              "method": "POST",
+              "path": "/merch/identity/aftersales/{aftersaleId}/returns",
+              "summary": "Confirm return receipt for a shop aftersale",
+              "description": "Confirms return receipt for a RETURN_REFUND aftersale of the session shop and sets return_status to RECEIVED. Requires commandKey and expectedVersion. Same commandKey and digest replays the prior result. Does not restock Catalog.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.aftersale.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "aftersaleId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Aftersale identifier"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Observed aftersale version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Aftersale with received return",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipments.list",
+              "method": "GET",
+              "path": "/merch/identity/shipments",
+              "summary": "List shop shipments",
+              "description": "Pages shipments of the session shop. Merchant and shop IDs are taken from the session. Optional orderId and status filters are exact matches. Closed shops are rejected.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.shipment.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "orderId",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Exact Trade order id"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "SHIPPED or DELIVERED"
+                },
+                {
+                  "name": "page",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page number, default 1"
+                },
+                {
+                  "name": "pageSize",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page size, default 20, max 100"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipment page",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipments.get",
+              "method": "GET",
+              "path": "/merch/identity/shipments/{shipmentId}",
+              "summary": "Get a shop shipment",
+              "description": "Reads one shipment of the session shop, including traces. Merchant and shop IDs are taken from the session. Closed shops are rejected.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.shipment.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "shipmentId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Shipment identifier"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipment",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipments.create",
+              "method": "POST",
+              "path": "/merch/identity/shipments",
+              "summary": "Create a shop shipment",
+              "description": "Ships one Trade order of the session shop. The same shop and order can have only one shipment. Requires commandKey. Same commandKey and digest replays the prior result. Closed shops are rejected.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipment.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "orderId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Trade order id"
+                },
+                {
+                  "name": "carrier",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Carrier name; 1 to 64 characters"
+                },
+                {
+                  "name": "trackingNo",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Tracking number; 1 to 64 characters"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Created shipment",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipments.traces.create",
+              "method": "POST",
+              "path": "/merch/identity/shipments/{shipmentId}/traces",
+              "summary": "Append a shipment trace",
+              "description": "Appends a trace node to a SHIPPED shipment of the session shop. Requires commandKey and expectedVersion. Same commandKey and digest replays the prior result. Closed shops are rejected.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipment.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "shipmentId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Shipment identifier"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current shipment version"
+                },
+                {
+                  "name": "node",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Trace node; 1 to 200 characters"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Updated shipment",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipments.close",
+              "method": "POST",
+              "path": "/merch/identity/shipments/{shipmentId}/close",
+              "summary": "Confirm a shop shipment",
+              "description": "Confirms receipt of a SHIPPED shipment of the session shop and moves it to DELIVERED. Requires commandKey and expectedVersion. Same commandKey and digest replays the prior result. Closed shops are rejected.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipment.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "shipmentId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Shipment identifier"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current shipment version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Closed shipment",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.customer-accounts.shops.list",
+              "method": "GET",
+              "path": "/merch/identity/customer-accounts/shops",
+              "summary": "List shops for merchant customer-account scope",
+              "description": "Lists shops of the signed-in merchant. Staff bound to a session shop only see that shop. Merchant ID is taken from the session.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.customer-account.manage"
+              ],
+              "requestFields": [],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shop directory",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.customer-accounts.list",
+              "method": "GET",
+              "path": "/merch/identity/customer-accounts",
+              "summary": "List merchant customer-service accounts",
+              "description": "Pages customer-service accounts of the signed-in merchant. shopId is optional and must belong to the merchant. Merchant ID is taken from the session.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.customer-account.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Identity shop_id; empty means all shops of the current merchant"
+                },
+                {
+                  "name": "platform",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "Exact external platform code"
+                },
+                {
+                  "name": "account",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "Account substring"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "ACTIVE or DISABLED"
+                },
+                {
+                  "name": "page",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page number; default 1"
+                },
+                {
+                  "name": "pageSize",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page size; default 20"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Paginated customer-service accounts",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.customer-accounts.create",
+              "method": "POST",
+              "path": "/merch/identity/customer-accounts",
+              "summary": "Create merchant customer-service account",
+              "description": "Creates one account in a shop that belongs to the signed-in merchant. Merchant ID is taken from the session.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.customer-account.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Identity shop_id"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Created account",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.customer-accounts.update",
+              "method": "PUT",
+              "path": "/merch/identity/customer-accounts/{accountId}",
+              "summary": "Update merchant customer-service account",
+              "description": "Updates editable fields using optimistic versioning. Merchant ID is taken from the session; shopId must belong to that merchant.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.customer-account.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "accountId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Customer-service account"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current account version"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Identity shop_id"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Updated account",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.customer-accounts.delete",
+              "method": "DELETE",
+              "path": "/merch/identity/customer-accounts/{accountId}",
+              "summary": "Delete merchant customer-service account",
+              "description": "Deletes the scoped account once using a stable command key and expected version. Merchant ID is taken from the session.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.customer-account.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "accountId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Customer-service account"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current account version"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Identity shop_id"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Deleted account",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.domains.shops.list",
+              "method": "GET",
+              "path": "/merch/identity/domains/shops",
+              "summary": "List shops for custom domain scope",
+              "description": "Lists non-closed shops of the signed-in merchant for live and shop domain pages. A session bound to one shop only returns that shop.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.domain.read"
+              ],
+              "requestFields": [],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shops",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.domains.list",
+              "method": "GET",
+              "path": "/merch/identity/domains",
+              "summary": "List shop custom domains",
+              "description": "Lists non-deleted custom domains for one shop of the signed-in merchant. Merchant ID is taken from the session. Optional scene is LIVE or SHOP; omitted or empty defaults to LIVE. Platform overlay is read from merchant governance and is not stored on the domain row.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.domain.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "query",
+                  "required": true,
+                  "description": "Target shop; must match the session shop when the session is shop-bound"
+                },
+                {
+                  "name": "scene",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "LIVE or SHOP. Omitted or empty defaults to LIVE"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "PENDING / VERIFIED / FAILED"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Custom domain page",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.domains.create",
+              "method": "POST",
+              "path": "/merch/identity/domains",
+              "summary": "Create a shop custom domain",
+              "description": "Binds a custom host and returns the TXT challenge. Optional scene is LIVE or SHOP; omitted or empty defaults to LIVE. Denied when the domains platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.domain.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "host",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Lowercase FQDN without scheme or path"
+                },
+                {
+                  "name": "scene",
+                  "type": "string",
+                  "location": "body",
+                  "required": false,
+                  "description": "LIVE or SHOP. Omitted or empty defaults to LIVE"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Domain result with TXT challenge",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.domains.test",
+              "method": "POST",
+              "path": "/merch/identity/domains/{domainId}/test",
+              "summary": "Test a shop custom domain TXT challenge",
+              "description": "Looks up the TXT challenge outside the write transaction and converges PENDING/FAILED/VERIFIED. Optional scene must match the row when provided. Denied when the domains platform overlay is restricted or suspended. Missing resolver fails closed.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.domain.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected domain row version"
+                },
+                {
+                  "name": "scene",
+                  "type": "string",
+                  "location": "body",
+                  "required": false,
+                  "description": "LIVE or SHOP. When provided, must match the row scene"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Domain result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.domains.activate",
+              "method": "POST",
+              "path": "/merch/identity/domains/{domainId}/activate",
+              "summary": "Activate a verified shop custom domain as primary",
+              "description": "Marks a VERIFIED domain as the only primary host for that shop scene. Optional scene must match the row when provided. Denied when the domains platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.domain.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected domain row version"
+                },
+                {
+                  "name": "scene",
+                  "type": "string",
+                  "location": "body",
+                  "required": false,
+                  "description": "LIVE or SHOP. When provided, must match the row scene"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Domain result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.domains.delete",
+              "method": "DELETE",
+              "path": "/merch/identity/domains/{domainId}",
+              "summary": "Delete a shop custom domain",
+              "description": "Soft-deletes the domain, clears the primary mark and releases the host uniqueness slot. Optional scene must match the row when provided. Still allowed when the domains platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.domain.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected domain row version"
+                },
+                {
+                  "name": "scene",
+                  "type": "string",
+                  "location": "body",
+                  "required": false,
+                  "description": "LIVE or SHOP. When provided, must match the row scene"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Domain result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.shops.list",
+              "method": "GET",
+              "path": "/merch/identity/shipping-delivery/shops",
+              "summary": "List shops for shipping settings",
+              "description": "Lists non-closed shops of the signed-in merchant for the shipping-delivery page. A session bound to one shop only returns that shop.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.shipping.read"
+              ],
+              "requestFields": [],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shops",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.rules.list",
+              "method": "GET",
+              "path": "/merch/identity/shipping-delivery/rules",
+              "summary": "List shop shipping rules",
+              "description": "Lists non-retired shipping rules for one shop of the signed-in merchant. Merchant ID is taken from the session. Platform overlay is read from merchant governance and is not stored on the rule row.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.shipping.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "query",
+                  "required": true,
+                  "description": "Target shop; must match the session shop when the session is shop-bound"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "ACTIVE or DISABLED"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping rule page",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.rules.create",
+              "method": "POST",
+              "path": "/merch/identity/shipping-delivery/rules",
+              "summary": "Create a shop shipping rule",
+              "description": "Creates a shipping rule for one shop of the signed-in merchant. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Rule name"
+                },
+                {
+                  "name": "regions",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Coverage text"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping rule result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.rules.update",
+              "method": "PUT",
+              "path": "/merch/identity/shipping-delivery/rules/{ruleId}",
+              "summary": "Update a shop shipping rule",
+              "description": "Updates a non-retired shipping rule by expected version. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected rule row version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping rule result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.rules.retire",
+              "method": "POST",
+              "path": "/merch/identity/shipping-delivery/rules/{ruleId}/retire",
+              "summary": "Retire a shop shipping rule",
+              "description": "Moves a shipping rule to RETIRED. Denied when the shipping platform overlay is restricted or suspended. Retired rows stay for audit and are omitted from the default list.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected rule row version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping rule result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.list",
+              "method": "GET",
+              "path": "/merch/identity/shipping-delivery/presets",
+              "summary": "List shop shipping presets",
+              "description": "Lists non-retired shipping presets for one shop of the signed-in merchant. Merchant ID is taken from the session. Platform overlay is read from merchant governance and is not stored on the preset row.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.shipping.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "query",
+                  "required": true,
+                  "description": "Target shop; must match the session shop when the session is shop-bound"
+                },
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "ACTIVE or DISABLED"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset page",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.get",
+              "method": "GET",
+              "path": "/merch/identity/shipping-delivery/presets/{presetId}",
+              "summary": "Read a shop shipping preset",
+              "description": "Reads one non-retired shipping preset including nested zones. Retired presets are not found.",
+              "authentication": "module-session",
+              "idempotency": "safe",
+              "requiredPermissions": [
+                "identity.shipping.read"
+              ],
+              "requestFields": [
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "query",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.create",
+              "method": "POST",
+              "path": "/merch/identity/shipping-delivery/presets",
+              "summary": "Create a shop shipping preset",
+              "description": "Creates a shipping preset with nested zones JSON. Same-shop non-retired presets keep at most one default. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "name",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Preset name"
+                },
+                {
+                  "name": "zones",
+                  "type": "array",
+                  "location": "body",
+                  "required": true,
+                  "description": "Nested zones, regions and rates"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.update",
+              "method": "PUT",
+              "path": "/merch/identity/shipping-delivery/presets/{presetId}",
+              "summary": "Update a shop shipping preset",
+              "description": "Updates a non-retired shipping preset by expected version, including nested zones. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected preset row version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.enable",
+              "method": "POST",
+              "path": "/merch/identity/shipping-delivery/presets/{presetId}/enable",
+              "summary": "Enable a shop shipping preset",
+              "description": "Enables a non-retired shipping preset. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected preset row version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.disable",
+              "method": "POST",
+              "path": "/merch/identity/shipping-delivery/presets/{presetId}/disable",
+              "summary": "Disable a shop shipping preset",
+              "description": "Disables a non-retired shipping preset. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected preset row version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset result",
+                  "fields": []
+                }
+              ]
+            },
+            {
+              "id": "identity.merch.shipping-delivery.presets.retire",
+              "method": "POST",
+              "path": "/merch/identity/shipping-delivery/presets/{presetId}/retire",
+              "summary": "Retire a shop shipping preset",
+              "description": "Moves a shipping preset to RETIRED and clears the default mark. Denied when the shipping platform overlay is restricted or suspended.",
+              "authentication": "module-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [
+                "identity.shipping.manage"
+              ],
+              "requestFields": [
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable retry key"
+                },
+                {
+                  "name": "shopId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Target shop of the signed-in merchant"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Expected preset row version"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Shipping preset result",
+                  "fields": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "surface": "shop",
+          "prefix": "/shop/identity",
+          "operations": [
+            {
+              "id": "identity.shop.health.get",
+              "method": "GET",
+              "path": "/shop/identity/health",
+              "summary": "Read Identity shop readiness",
+              "description": "Returns the readiness of the Identity shop contribution backend.",
+              "authentication": "public",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Ready",
+                  "fields": [
+                    {
+                      "name": "status",
+                      "type": "string",
+                      "description": "Readiness"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.login.otp.create",
+              "method": "POST",
+              "path": "/shop/identity/login/otp",
+              "summary": "Create a shop login OTP challenge",
+              "description": "Commits a login verification challenge for an active shop, then SYNC-dispatches identity.auth.otp.requested. Identity owns the challenge; Platform only delivers template variables.",
+              "authentication": "public",
+              "idempotency": "non-idempotent",
+              "requiredPermissions": [],
+              "notifications": [
+                {
+                  "eventKey": "identity.auth.otp.requested",
+                  "title": "登录验证码",
+                  "variables": ["code", "ttlSeconds"],
+                  "allowedChannels": ["SMS", "EMAIL"],
+                  "defaultDispatch": "SYNC"
+                }
+              ],
+              "requestFields": [
+                {
+                  "name": "shopCode",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Active shop code"
+                },
+                {
+                  "name": "phone",
+                  "type": "string",
+                  "location": "body",
+                  "required": false,
+                  "description": "Destination mobile number"
+                },
+                {
+                  "name": "email",
+                  "type": "string",
+                  "location": "body",
+                  "required": false,
+                  "description": "Destination email"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Challenge created",
+                  "fields": [
+                    {
+                      "name": "challengeId",
+                      "type": "string",
+                      "description": "Opaque challenge identifier"
+                    },
+                    {
+                      "name": "ttlSeconds",
+                      "type": "integer",
+                      "description": "Challenge lifetime"
+                    },
+                    {
+                      "name": "expiresAt",
+                      "type": "string",
+                      "description": "Challenge expiry"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.login.create",
+              "method": "POST",
+              "path": "/shop/identity/login",
+              "summary": "Verify a shop login OTP challenge",
+              "description": "Consumes a pending login OTP challenge. This slice does not issue a session or upgrade a guest principal.",
+              "authentication": "public",
+              "idempotency": "non-idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "shopCode",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Active shop code that owns the challenge"
+                },
+                {
+                  "name": "challengeId",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Challenge identifier returned by login.otp.create"
+                },
+                {
+                  "name": "code",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Six-digit verification code"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Challenge consumed",
+                  "fields": [
+                    {
+                      "name": "challengeId",
+                      "type": "string",
+                      "description": "Consumed challenge identifier"
+                    },
+                    {
+                      "name": "verified",
+                      "type": "boolean",
+                      "description": "Always true on success"
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -4056,6 +5690,62 @@
         "description": "读取当前店铺游客风险事件与当前风险快照；不含写入或平台游客风控治理"
       },
       {
+        "code": "identity.complaint.read",
+        "name": "读取店铺投诉",
+        "resource": "identity.complaint",
+        "action": "read",
+        "description": "读取当前店铺投诉工单列表与详情；不含审核或 Shop 提交"
+      },
+      {
+        "code": "identity.complaint.manage",
+        "name": "审核店铺投诉",
+        "resource": "identity.complaint",
+        "action": "manage",
+        "description": "审核当前店铺 OPEN 投诉为 ACCEPTED 或 REJECTED；不创建工单、不发起退款"
+      },
+      {
+        "code": "identity.shipment.read",
+        "name": "读取店铺发货单",
+        "resource": "identity.shipment",
+        "action": "read",
+        "description": "读取当前店铺发货单列表与详情；不含发货、追加轨迹或确认收货"
+      },
+      {
+        "code": "identity.shipment.manage",
+        "name": "管理店铺发货单",
+        "resource": "identity.shipment",
+        "action": "manage",
+        "description": "为当前店铺订单发货、追加轨迹并将在途发货单确认为已签收；不更新 Trade 订单状态"
+      },
+      {
+        "code": "identity.aftersale.read",
+        "name": "读取店铺售后",
+        "resource": "identity.aftersale",
+        "action": "read",
+        "description": "读取当前店铺售后工单列表与详情；不含审核、确认退货或 Shop 申请"
+      },
+      {
+        "code": "identity.aftersale.manage",
+        "name": "处理店铺售后",
+        "resource": "identity.aftersale",
+        "action": "manage",
+        "description": "审核当前店铺 PENDING 售后，或确认退货收货；不执行退款、不回补库存、不创建工单"
+      },
+      {
+        "code": "identity.shipping.read",
+        "name": "读取店铺配送设置",
+        "resource": "identity.shipping",
+        "action": "read",
+        "description": "读取当前商户店铺的配送规则、发货预设和平台叠加层"
+      },
+      {
+        "code": "identity.shipping.manage",
+        "name": "管理店铺配送设置",
+        "resource": "identity.shipping",
+        "action": "manage",
+        "description": "创建、编辑、启停和退役当前店铺配送规则与发货预设；平台叠加层受限时全部写入失败关闭"
+      },
+      {
         "code": "identity.privacy.manage",
         "name": "管理客户隐私",
         "resource": "identity.privacy",
@@ -4089,6 +5779,20 @@
         "resource": "identity.app",
         "action": "manage",
         "description": "创建店铺私有应用、轮换密钥并启停；平台叠加层受限时仍可停用"
+      },
+      {
+        "code": "identity.domain.read",
+        "name": "读取店铺域名",
+        "resource": "identity.domain",
+        "action": "read",
+        "description": "读取当前商户店铺的自定义域名绑定、TXT 挑战、主域名标记和平台叠加层"
+      },
+      {
+        "code": "identity.domain.manage",
+        "name": "管理店铺域名",
+        "resource": "identity.domain",
+        "action": "manage",
+        "description": "绑定自定义域名、校验 TXT、设为主域名并删除；平台叠加层受限时仍可删除"
       },
       {
         "code": "identity.shop-category.manage",
@@ -4153,7 +5857,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4208,7 +5912,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4253,7 +5957,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4298,7 +6002,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4342,7 +6046,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4385,7 +6089,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4431,7 +6135,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4476,7 +6180,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4509,7 +6213,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4542,7 +6246,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -4576,7 +6280,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -4610,7 +6314,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -4644,7 +6348,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -4678,7 +6382,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -4716,7 +6420,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4768,7 +6472,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4818,7 +6522,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4836,7 +6540,7 @@
         "route": "/merchant/profile",
         "title": "商户信息",
         "icon": "id-card",
-        "description": "维护当前商户对外编号、联系人和平台营销触达偏好。公司名、登录账号和状态只读，仅所有者可保存。",
+        "description": "补充公司 ID、主要联系人和营销触达偏好，用于对接与业务联络。公司名、登录账号和状态只读，仅所有者可保存。",
         "sort": 130,
         "navigation": {
           "groupId": "legacy-merch-center",
@@ -4862,7 +6566,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4915,7 +6619,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -4967,7 +6671,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5024,7 +6728,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5068,7 +6772,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5127,7 +6831,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5179,7 +6883,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5212,7 +6916,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5224,13 +6928,13 @@
         }
       },
       {
-        "id": "identity.placeholder.merch.complaints",
+        "id": "identity.merch.complaints",
         "surface": "merch",
         "kind": "page",
         "route": "/complaints",
         "title": "投诉管理",
         "icon": "message-square-warning",
-        "description": "投诉管理菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "查看并审核当前店铺投诉工单。范围只来自登录店铺；审核将待处理投诉受理或驳回。对象编号是订单/售后/直播/商品引用，本页不打开对方模块。",
         "sort": 170,
         "navigation": {
           "groupId": "legacy-merch-mall",
@@ -5239,31 +6943,50 @@
           "groupSort": 300
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.complaint.read"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/merch/identity/complaints",
+            "requiredPermissions": [
+              "identity.complaint.read"
+            ]
+          },
+          {
+            "methods": [
+              "POST"
+            ],
+            "prefix": "/merch/identity/complaints",
+            "requiredPermissions": [
+              "identity.complaint.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchComplaintsPage",
           "props": [],
           "events": [],
           "actions": []
         }
       },
       {
-        "id": "identity.placeholder.merch.customer-accounts",
+        "id": "identity.merch.customer-accounts",
         "surface": "merch",
         "kind": "page",
         "route": "/customer-accounts",
         "title": "客服管理",
         "icon": "headset",
-        "description": "客服管理菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "维护当前商户店铺对外展示和直播渠道使用的外部客服账号。账号不是登录凭据；写入绑定权威店铺范围并使用版本与命令幂等保护。",
         "sort": 180,
         "navigation": {
           "groupId": "legacy-merch-mall",
@@ -5272,18 +6995,31 @@
           "groupSort": 300
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.customer-account.manage"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE"
+            ],
+            "prefix": "/merch/identity/customer-accounts",
+            "requiredPermissions": [
+              "identity.customer-account.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchCustomerAccountsPage",
           "props": [],
           "events": [],
           "actions": []
@@ -5321,7 +7057,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5333,13 +7069,13 @@
         }
       },
       {
-        "id": "identity.placeholder.merch.live-domains",
+        "id": "identity.merch.live-domains",
         "surface": "merch",
         "kind": "page",
         "route": "/live/domains",
         "title": "直播域名",
         "icon": "globe",
-        "description": "直播域名菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "按店铺维护直播自定义域名绑定、TXT 校验和主域名。场景固定为直播；列表与写命令缺省 LIVE。平台叠加层只读展示，受限时仍可删除。",
         "sort": 170,
         "navigation": {
           "groupId": "legacy-merch-live",
@@ -5348,31 +7084,51 @@
           "groupSort": 400
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.domain.read"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/merch/identity/domains",
+            "requiredPermissions": [
+              "identity.domain.read"
+            ]
+          },
+          {
+            "methods": [
+              "POST",
+              "DELETE"
+            ],
+            "prefix": "/merch/identity/domains",
+            "requiredPermissions": [
+              "identity.domain.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchLiveDomainsPage",
           "props": [],
           "events": [],
           "actions": []
         }
       },
       {
-        "id": "identity.placeholder.merch.live-customer-service",
+        "id": "identity.merch.live-customer-service",
         "surface": "merch",
         "kind": "page",
         "route": "/live/customer-service",
         "title": "直播客服",
         "icon": "message-circle",
-        "description": "直播客服菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "按当前商户的店铺范围维护直播与商城共用的外部客服账号。实时互动仍归直播，本页不打开直播间。",
         "sort": 190,
         "navigation": {
           "groupId": "legacy-merch-live",
@@ -5381,31 +7137,44 @@
           "groupSort": 400
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.customer-account.manage"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE"
+            ],
+            "prefix": "/merch/identity/customer-accounts",
+            "requiredPermissions": [
+              "identity.customer-account.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchLiveCustomerServicePage",
           "props": [],
           "events": [],
           "actions": []
         }
       },
       {
-        "id": "identity.placeholder.merch.aftersale",
+        "id": "identity.merch.aftersale",
         "surface": "merch",
         "kind": "page",
         "route": "/aftersale",
         "title": "售后工单",
         "icon": "life-buoy",
-        "description": "售后工单菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "查看并审核当前店铺售后工单，确认退货收货。范围只来自登录店铺；审核通过不执行退款，确认收货不回补库存。订单号和 SKU 是对方模块引用，本页不打开对方模块。",
         "sort": 100,
         "navigation": {
           "groupId": "legacy-merch-fulfillment",
@@ -5414,31 +7183,50 @@
           "groupSort": 500
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.aftersale.read"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/merch/identity/aftersales",
+            "requiredPermissions": [
+              "identity.aftersale.read"
+            ]
+          },
+          {
+            "methods": [
+              "POST"
+            ],
+            "prefix": "/merch/identity/aftersales",
+            "requiredPermissions": [
+              "identity.aftersale.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchAftersalePage",
           "props": [],
           "events": [],
           "actions": []
         }
       },
       {
-        "id": "identity.placeholder.merch.logistics",
+        "id": "identity.merch.logistics",
         "surface": "merch",
         "kind": "page",
         "route": "/logistics",
         "title": "物流发货",
         "icon": "truck",
-        "description": "物流发货菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "查看当前店铺发货单并发货、追加轨迹或确认收货。范围只来自登录店铺；订单编号是 Trade 引用，本页不打开订单。设置中的发货/配送规则不在本页。",
         "sort": 120,
         "navigation": {
           "groupId": "legacy-merch-fulfillment",
@@ -5447,18 +7235,37 @@
           "groupSort": 500
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.shipment.read"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/merch/identity/shipments",
+            "requiredPermissions": [
+              "identity.shipment.read"
+            ]
+          },
+          {
+            "methods": [
+              "POST"
+            ],
+            "prefix": "/merch/identity/shipments",
+            "requiredPermissions": [
+              "identity.shipment.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchLogisticsPage",
           "props": [],
           "events": [],
           "actions": []
@@ -5497,7 +7304,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5549,7 +7356,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5561,13 +7368,13 @@
         }
       },
       {
-        "id": "identity.placeholder.merch.settings-domains",
+        "id": "identity.merch.settings-domains",
         "surface": "merch",
         "kind": "page",
         "route": "/settings/domains",
         "title": "域名",
         "icon": "globe",
-        "description": "域名菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "按店铺维护店铺自定义域名绑定、TXT 校验和主域名。场景固定为店铺；平台叠加层只读展示，受限时仍可删除。",
         "sort": 120,
         "navigation": {
           "groupId": "legacy-merch-settings",
@@ -5576,18 +7383,38 @@
           "groupSort": 700
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.domain.read"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/merch/identity/domains",
+            "requiredPermissions": [
+              "identity.domain.read"
+            ]
+          },
+          {
+            "methods": [
+              "POST",
+              "DELETE"
+            ],
+            "prefix": "/merch/identity/domains",
+            "requiredPermissions": [
+              "identity.domain.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchSettingsDomainsPage",
           "props": [],
           "events": [],
           "actions": []
@@ -5634,7 +7461,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5667,7 +7494,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5679,13 +7506,13 @@
         }
       },
       {
-        "id": "identity.placeholder.merch.settings-shipping-delivery",
+        "id": "identity.merch.settings-shipping-delivery",
         "surface": "merch",
         "kind": "page",
         "route": "/settings/shipping-delivery",
         "title": "发货/配送",
         "icon": "truck",
-        "description": "发货/配送菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "按店铺维护配送规则和发货预设。平台叠加层只读展示；受限时禁止创建、编辑、启停和退役。不处理订单发货。",
         "sort": 150,
         "navigation": {
           "groupId": "legacy-merch-settings",
@@ -5694,18 +7521,38 @@
           "groupSort": 700
         },
         "requiredPermissions": [
-          "identity.placeholder.read"
+          "identity.shipping.read"
         ],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/merch/identity/shipping-delivery",
+            "requiredPermissions": [
+              "identity.shipping.read"
+            ]
+          },
+          {
+            "methods": [
+              "POST",
+              "PUT"
+            ],
+            "prefix": "/merch/identity/shipping-delivery",
+            "requiredPermissions": [
+              "identity.shipping.manage"
+            ]
+          }
+        ],
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "IdentityMerchShippingDeliveryPage",
           "props": [],
           "events": [],
           "actions": []
@@ -5731,7 +7578,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -5744,13 +7591,13 @@
         }
       },
       {
-        "id": "identity.placeholder.shop.login",
+        "id": "identity.shop.login",
         "surface": "shop",
         "kind": "page",
         "route": "/login",
         "title": "买家登录",
         "icon": "log-in",
-        "description": "通过手机、邮箱或验证码登录，并将当前店铺游客会话升级为顾客会话。",
+        "description": "通过手机或邮箱请求登录验证码并由 Identity 核验挑战。游客升级为顾客会话不在本页。",
         "sort": 20,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -5759,11 +7606,26 @@
           "groupSort": 500
         },
         "requiredPermissions": [],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": [
+              "GET"
+            ],
+            "prefix": "/shop/identity/health",
+            "requiredPermissions": []
+          },
+          {
+            "methods": [
+              "POST"
+            ],
+            "prefix": "/shop/identity/login",
+            "requiredPermissions": []
+          }
+        ],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -5797,7 +7659,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -5831,7 +7693,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -5865,7 +7727,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -5899,7 +7761,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -5933,7 +7795,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.10",
+          "version": "2.0.19",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"

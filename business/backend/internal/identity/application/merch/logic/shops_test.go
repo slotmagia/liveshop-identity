@@ -33,7 +33,7 @@ func (stubCategoryRepo) RetireCategory(context.Context, shopmodel.RetireCategory
 }
 
 func merchShopLogic() *Logic {
-	return New(nil, nil, nil, nil, shop.NewDirectory(stubShopRepo{}), nil, nil, nil, nil, Subscription{}, nil, shop.NewCategories(stubCategoryRepo{}), nil)
+	return New(nil, nil, nil, nil, shop.NewDirectory(stubShopRepo{}), nil, nil, nil, nil, Subscription{}, nil, shop.NewCategories(stubCategoryRepo{}), nil, nil, nil, nil, nil, nil, nil)
 }
 
 func TestShopCategoriesRequiresMerchantContext(t *testing.T) {

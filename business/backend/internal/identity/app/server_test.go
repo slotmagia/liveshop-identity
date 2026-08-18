@@ -28,8 +28,12 @@ import (
 	merchrouter "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/merch/router"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz/model"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth"
+	authmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service"
 	customerservicemodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service/model"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment"
+	fulfillmentmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant"
 	merchantmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant_governance"
@@ -225,6 +229,30 @@ func (s stubShopDirectory) GetManagedShop(ctx context.Context, merchantID, shopI
 	}
 	return shopmodel.Shop{}, shopmodel.ErrNotFound
 }
+func (s stubShopDirectory) GetShopByCode(ctx context.Context, code string) (shopmodel.Shop, error) {
+	items, err := s.ListShops(ctx, 2001)
+	if err != nil {
+		return shopmodel.Shop{}, err
+	}
+	for _, item := range items {
+		if item.Code == code {
+			return item, nil
+		}
+	}
+	return shopmodel.Shop{}, shopmodel.ErrNotFound
+}
+func (s stubShopDirectory) GetShopBySubdomain(ctx context.Context, subdomain string) (shopmodel.Shop, error) {
+	items, err := s.ListShops(ctx, 2001)
+	if err != nil {
+		return shopmodel.Shop{}, err
+	}
+	for _, item := range items {
+		if item.Subdomain == subdomain {
+			return item, nil
+		}
+	}
+	return shopmodel.Shop{}, shopmodel.ErrNotFound
+}
 func (stubShopDirectory) CreateShop(_ context.Context, command shopmodel.CreateCommand) (shopmodel.Shop, bool, error) {
 	status := command.Status
 	if status == "" {
@@ -299,10 +327,44 @@ func (stubApps) SetAppEnabled(context.Context, shopmodel.SetAppEnabledCommand) (
 	return shopmodel.App{}, false, nil
 }
 
+type stubDomains struct{}
+
+func (stubDomains) ListDomains(_ context.Context, query shopmodel.DomainQuery) (shopmodel.DomainPage, error) {
+	return shopmodel.DomainPage{Items: []shopmodel.Domain{}, Page: query.Page, PageSize: query.PageSize}, nil
+}
+func (stubDomains) GetDomain(context.Context, int64, int64, int64) (shopmodel.Domain, error) {
+	return shopmodel.Domain{}, shopmodel.ErrDomainNotFound
+}
+func (stubDomains) GetDomainByHost(context.Context, string) (shopmodel.Domain, error) {
+	return shopmodel.Domain{}, shopmodel.ErrDomainNotFound
+}
+func (stubDomains) CreateDomain(context.Context, shopmodel.CreateDomainCommand) (shopmodel.Domain, bool, error) {
+	return shopmodel.Domain{}, false, nil
+}
+func (stubDomains) TestDomain(context.Context, shopmodel.DomainWriteCommand, bool) (shopmodel.Domain, bool, error) {
+	return shopmodel.Domain{}, false, nil
+}
+func (stubDomains) ActivateDomain(context.Context, shopmodel.DomainWriteCommand) (shopmodel.Domain, bool, error) {
+	return shopmodel.Domain{}, false, nil
+}
+func (stubDomains) DeleteDomain(context.Context, shopmodel.DomainWriteCommand) (shopmodel.Domain, bool, error) {
+	return shopmodel.Domain{}, false, nil
+}
+
 type stubCustomerService struct{}
 
-func (stubCustomerService) List(context.Context, customerservicemodel.Query) (customerservicemodel.Page, error) {
-	return customerservicemodel.Page{Items: []customerservicemodel.Account{}, Page: 1, PageSize: 20, Total: 0}, nil
+func (stubCustomerService) List(_ context.Context, query customerservicemodel.Query) (customerservicemodel.Page, error) {
+	page, pageSize := query.Page, query.PageSize
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 20
+	}
+	return customerservicemodel.Page{Page: page, PageSize: pageSize, Total: 1, Items: []customerservicemodel.Account{{
+		ID: 9, MerchantID: 2001, ShopID: 3001, Platform: "whatsapp", Account: "support", Nickname: "客服",
+		Status: customerservicemodel.StatusActive, Version: 1, CreatedAt: time.Unix(1, 0).UTC(), UpdatedAt: time.Unix(2, 0).UTC(),
+	}}}, nil
 }
 func (stubCustomerService) Save(context.Context, customerservicemodel.SaveCommand) (customerservicemodel.Account, bool, error) {
 	return customerservicemodel.Account{}, false, nil
@@ -319,6 +381,214 @@ func (stubRiskEvents) List(context.Context, riskmodel.Query) (riskmodel.Page, er
 		ScoreBefore: 10, ScoreAfterDecay: 10, ScoreDelta: 20, ScoreAfter: 30, CurrentScore: 30,
 		CurrentLevel: riskmodel.LevelLow, VisitorStatus: riskmodel.StatusWatch, CreatedAt: time.Unix(1, 0).UTC(),
 	}}}, nil
+}
+
+type stubComplaints struct{}
+
+func (stubComplaints) List(context.Context, fulfillmentmodel.Query) (fulfillmentmodel.Page, error) {
+	return fulfillmentmodel.Page{Page: 1, PageSize: 20, Total: 1, Items: []fulfillmentmodel.Complaint{stubOpenComplaint()}}, nil
+}
+func (stubComplaints) Get(_ context.Context, _, _, complaintID int64) (fulfillmentmodel.Complaint, error) {
+	item := stubOpenComplaint()
+	item.ID = complaintID
+	return item, nil
+}
+func (stubComplaints) Review(_ context.Context, command fulfillmentmodel.ReviewCommand) (fulfillmentmodel.Complaint, bool, error) {
+	handled := time.Unix(2, 0).UTC()
+	item := stubOpenComplaint()
+	item.ID = command.ComplaintID
+	item.Status = command.Status
+	item.HandleNote = command.HandleNote
+	item.Version = command.ExpectedVersion + 1
+	item.UpdatedAt = handled
+	item.HandledAt = &handled
+	return item, false, nil
+}
+
+func stubOpenComplaint() fulfillmentmodel.Complaint {
+	return fulfillmentmodel.Complaint{
+		ID: 11, MerchantID: 2001, ShopID: 3001, CustomerSubject: "cust-1001",
+		TargetType: fulfillmentmodel.TargetOrder, TargetID: 8801, ReasonCode: "quality", Content: "商品与描述不符",
+		Status: fulfillmentmodel.StatusOpen, Version: 1,
+		CreatedAt: time.Unix(1, 0).UTC(), UpdatedAt: time.Unix(1, 0).UTC(),
+	}
+}
+
+type stubAftersales struct{}
+
+func (stubAftersales) ListAftersales(context.Context, fulfillmentmodel.AftersaleQuery) (fulfillmentmodel.AftersalePage, error) {
+	return fulfillmentmodel.AftersalePage{Page: 1, PageSize: 20, Total: 1, Items: []fulfillmentmodel.Aftersale{stubPendingAftersale()}}, nil
+}
+func (stubAftersales) GetAftersale(_ context.Context, _, _, aftersaleID int64) (fulfillmentmodel.Aftersale, error) {
+	item := stubPendingAftersale()
+	item.ID = aftersaleID
+	return item, nil
+}
+func (stubAftersales) ReviewAftersale(_ context.Context, command fulfillmentmodel.ReviewAftersaleCommand) (fulfillmentmodel.Aftersale, bool, error) {
+	reviewed := time.Unix(2, 0).UTC()
+	item := stubPendingAftersale()
+	item.ID = command.AftersaleID
+	item.Status = command.Status
+	item.HandleNote = command.HandleNote
+	if command.Amount > 0 {
+		item.Amount = command.Amount
+	}
+	item.Version = command.ExpectedVersion + 1
+	item.UpdatedAt = reviewed
+	item.ReviewedAt = &reviewed
+	return item, false, nil
+}
+func (stubAftersales) ReceiveAftersale(_ context.Context, command fulfillmentmodel.ReceiveAftersaleCommand) (fulfillmentmodel.Aftersale, bool, error) {
+	reviewed := time.Unix(2, 0).UTC()
+	received := time.Unix(3, 0).UTC()
+	item := stubPendingAftersale()
+	item.ID = command.AftersaleID
+	item.Status = fulfillmentmodel.AftersaleApproved
+	item.HandleNote = "同意退货退款"
+	item.ReturnStatus = fulfillmentmodel.ReturnReceived
+	item.Version = command.ExpectedVersion + 1
+	item.UpdatedAt = received
+	item.ReviewedAt = &reviewed
+	item.ReceivedAt = &received
+	item.Items[0].ReceivedQuantity = 1
+	return item, false, nil
+}
+
+func stubPendingAftersale() fulfillmentmodel.Aftersale {
+	return fulfillmentmodel.Aftersale{
+		ID: 21, MerchantID: 2001, ShopID: 3001, CustomerSubject: "cust-2001", OrderID: 8802,
+		PaymentNo: "pay-21", Type: fulfillmentmodel.AftersaleReturnRefund, RequestedAmount: 9900, Amount: 9900,
+		Reason: "尺码不合适", Status: fulfillmentmodel.AftersalePending, ReturnStatus: fulfillmentmodel.ReturnPending, Version: 1,
+		CreatedAt: time.Unix(1, 0).UTC(), UpdatedAt: time.Unix(1, 0).UTC(),
+		Items: []fulfillmentmodel.AftersaleItem{{ID: 1, SKUID: 501, Title: "外套", Quantity: 1, RefundAmount: 9900}},
+	}
+}
+
+type stubShipments struct{}
+
+func (stubShipments) ListShipments(context.Context, fulfillmentmodel.ShipmentQuery) (fulfillmentmodel.ShipmentPage, error) {
+	return fulfillmentmodel.ShipmentPage{Page: 1, PageSize: 20, Total: 1, Items: []fulfillmentmodel.Shipment{stubShippedShipment()}}, nil
+}
+func (stubShipments) GetShipment(_ context.Context, _, _, shipmentID int64) (fulfillmentmodel.Shipment, error) {
+	item := stubShippedShipment()
+	item.ID = shipmentID
+	return item, nil
+}
+func (stubShipments) Ship(_ context.Context, command fulfillmentmodel.ShipCommand) (fulfillmentmodel.Shipment, bool, error) {
+	item := stubShippedShipment()
+	item.OrderID = command.OrderID
+	item.Carrier = command.Carrier
+	item.TrackingNo = command.TrackingNo
+	return item, false, nil
+}
+func (stubShipments) AddTrace(_ context.Context, command fulfillmentmodel.TraceCommand) (fulfillmentmodel.Shipment, bool, error) {
+	item := stubShippedShipment()
+	item.ID = command.ShipmentID
+	item.Version = command.ExpectedVersion + 1
+	item.UpdatedAt = time.Unix(2, 0).UTC()
+	item.Traces = append(item.Traces, fulfillmentmodel.Trace{OccurredAt: time.Unix(2, 0).UTC(), Node: command.Node})
+	return item, false, nil
+}
+func (stubShipments) CloseShipment(_ context.Context, command fulfillmentmodel.CloseShipmentCommand) (fulfillmentmodel.Shipment, bool, error) {
+	item := stubShippedShipment()
+	item.ID = command.ShipmentID
+	item.Status = fulfillmentmodel.ShipmentDelivered
+	item.Version = command.ExpectedVersion + 1
+	item.UpdatedAt = time.Unix(2, 0).UTC()
+	return item, false, nil
+}
+
+func stubShippedShipment() fulfillmentmodel.Shipment {
+	return fulfillmentmodel.Shipment{
+		ID: 11, MerchantID: 2001, ShopID: 3001, OrderID: 8801, Carrier: "顺丰速运", TrackingNo: "SF1234567890",
+		Status: fulfillmentmodel.ShipmentShipped, Version: 1,
+		Traces:    []fulfillmentmodel.Trace{{OccurredAt: time.Unix(1, 0).UTC(), Node: "已揽收"}},
+		CreatedAt: time.Unix(1, 0).UTC(), UpdatedAt: time.Unix(1, 0).UTC(),
+	}
+}
+
+type stubShipping struct{}
+
+func (stubShipping) ListRules(_ context.Context, query fulfillmentmodel.ShippingQuery) (fulfillmentmodel.ShippingRulePage, error) {
+	return fulfillmentmodel.ShippingRulePage{Page: query.Page, PageSize: query.PageSize, Total: 1, Items: []fulfillmentmodel.ShippingRule{stubShippingRule()}}, nil
+}
+func (stubShipping) SaveRule(_ context.Context, command fulfillmentmodel.SaveShippingRuleCommand) (fulfillmentmodel.ShippingRule, bool, error) {
+	item := stubShippingRule()
+	item.Name = command.Rule.Name
+	item.Regions = command.Rule.Regions
+	if command.Rule.ID > 0 {
+		item.ID = command.Rule.ID
+		item.Version = command.ExpectedVersion + 1
+	}
+	return item, false, nil
+}
+func (stubShipping) RetireRule(_ context.Context, command fulfillmentmodel.RetireShippingCommand) (fulfillmentmodel.ShippingRule, bool, error) {
+	item := stubShippingRule()
+	item.ID = command.ID
+	item.Status = fulfillmentmodel.ShippingRetired
+	item.Version = command.ExpectedVersion + 1
+	return item, false, nil
+}
+func (stubShipping) ListPresets(_ context.Context, query fulfillmentmodel.ShippingQuery) (fulfillmentmodel.ShippingPresetPage, error) {
+	return fulfillmentmodel.ShippingPresetPage{Page: query.Page, PageSize: query.PageSize, Total: 1, Items: []fulfillmentmodel.ShippingPreset{stubShippingPreset()}}, nil
+}
+func (stubShipping) GetPreset(_ context.Context, _, _, presetID int64) (fulfillmentmodel.ShippingPreset, error) {
+	item := stubShippingPreset()
+	item.ID = presetID
+	return item, nil
+}
+func (stubShipping) SavePreset(_ context.Context, command fulfillmentmodel.SaveShippingPresetCommand) (fulfillmentmodel.ShippingPreset, bool, error) {
+	item := stubShippingPreset()
+	item.Name = command.Preset.Name
+	item.Zones = command.Preset.Zones
+	if command.Preset.ID > 0 {
+		item.ID = command.Preset.ID
+		item.Version = command.ExpectedVersion + 1
+	}
+	return item, false, nil
+}
+func (stubShipping) SetPresetEnabled(_ context.Context, command fulfillmentmodel.SetShippingPresetEnabledCommand) (fulfillmentmodel.ShippingPreset, bool, error) {
+	item := stubShippingPreset()
+	item.ID = command.PresetID
+	if command.Enabled {
+		item.Status = fulfillmentmodel.ShippingActive
+	} else {
+		item.Status = fulfillmentmodel.ShippingDisabled
+	}
+	item.Version = command.ExpectedVersion + 1
+	return item, false, nil
+}
+func (stubShipping) RetirePreset(_ context.Context, command fulfillmentmodel.RetireShippingCommand) (fulfillmentmodel.ShippingPreset, bool, error) {
+	item := stubShippingPreset()
+	item.ID = command.ID
+	item.Status = fulfillmentmodel.ShippingRetired
+	item.IsDefault = false
+	item.Version = command.ExpectedVersion + 1
+	return item, false, nil
+}
+
+func stubShippingRule() fulfillmentmodel.ShippingRule {
+	return fulfillmentmodel.ShippingRule{
+		ID: 11, MerchantID: 2001, ShopID: 3001, Name: "美国标准", Regions: "US",
+		FeeFen: 800, FreeOverFen: 9900, MinDays: 3, MaxDays: 7, SortOrder: 1,
+		Status: fulfillmentmodel.ShippingActive, Version: 1, CreatedAt: time.Unix(1, 0).UTC(), UpdatedAt: time.Unix(1, 0).UTC(),
+	}
+}
+
+func stubShippingPreset() fulfillmentmodel.ShippingPreset {
+	return fulfillmentmodel.ShippingPreset{
+		ID: 21, MerchantID: 2001, ShopID: 3001, Name: "默认发货", IsDefault: true,
+		ProductScope: fulfillmentmodel.ProductScopeAll, ProductIDs: []int64{}, OriginName: "洛杉矶仓",
+		OriginRegionCode: "US-CA", OriginRegionName: "California", OriginCountryCode: "US", OriginCountryName: "United States",
+		Status: fulfillmentmodel.ShippingActive, Version: 1, CreatedAt: time.Unix(1, 0).UTC(), UpdatedAt: time.Unix(1, 0).UTC(),
+		Zones: []fulfillmentmodel.ShippingZone{{
+			ID: 1, Name: "北美",
+			Regions: []fulfillmentmodel.ShippingRegion{{RegionCode: "US", RegionName: "United States", CountryCode: "US", CountryName: "United States"}},
+			Rates: []fulfillmentmodel.ShippingRate{{
+				ID: 101, Name: "标准", TransitType: fulfillmentmodel.TransitStandard, MinDays: 3, MaxDays: 7, Status: fulfillmentmodel.ShippingActive,
+			}},
+		}},
+	}
 }
 
 type stubMerchantGovernance struct{}
@@ -457,6 +727,37 @@ func TestHealthRequiresAuthorizedModuleSession(t *testing.T) {
 				t.Fatalf("surface 头不符时状态 %d：%s", status, body)
 			}
 		})
+	}
+}
+
+func TestShopLoginOTPIsPublicOnShopSurface(t *testing.T) {
+	_, keys := testKeys(t)
+	base := startServer(t, keys)
+	health := base + "/shop/identity/health"
+	otp := base + "/shop/identity/login/otp"
+	login := base + "/shop/identity/login"
+	body := `{"shopCode":"local-shop","phone":"13800000000"}`
+
+	if status, got := call(t, health, "shop", ""); status != http.StatusOK {
+		t.Fatalf("shop health status=%d body=%s", status, got)
+	}
+	if status, got := call(t, health, "merch", ""); status != http.StatusForbidden {
+		t.Fatalf("wrong surface health status=%d body=%s", status, got)
+	}
+	if status, got := callJSON(t, http.MethodPost, otp, "shop", "", body); status != http.StatusOK {
+		t.Fatalf("otp granted status=%d body=%s", status, got)
+	}
+	if status, got := callJSON(t, http.MethodPost, otp, "merch", "", body); status != http.StatusForbidden {
+		t.Fatalf("otp wrong surface status=%d body=%s", status, got)
+	}
+	if status, got := callJSON(t, http.MethodPost, otp, "", "", body); status != http.StatusForbidden {
+		t.Fatalf("otp missing surface status=%d body=%s", status, got)
+	}
+	if status, got := callJSON(t, http.MethodPost, login, "shop", "", `{"shopCode":"local-shop","challengeId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","code":"123456"}`); status != http.StatusOK {
+		t.Fatalf("login granted status=%d body=%s", status, got)
+	}
+	if status, got := callJSON(t, http.MethodPost, login, "admin", "", `{"shopCode":"local-shop","challengeId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","code":"123456"}`); status != http.StatusForbidden {
+		t.Fatalf("login wrong surface status=%d body=%s", status, got)
 	}
 }
 
@@ -643,6 +944,28 @@ func TestMerchAppsRequireDedicatedReadPermission(t *testing.T) {
 	}
 }
 
+func TestMerchDomainsRequireDedicatedReadPermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	for _, endpoint := range []string{
+		base + "/merch/identity/domains/shops",
+		base + "/merch/identity/domains?shopId=3001&page=1&pageSize=20",
+	} {
+		granted := sign(t, issuer, "merch", "/merch/identity/domains", "identity.domain.read")
+		if status, body := call(t, endpoint, "merch", granted); status != http.StatusOK {
+			t.Fatalf("granted %s status=%d body=%s", endpoint, status, body)
+		}
+		wrong := sign(t, issuer, "merch", "/merch/identity/domains", "identity.app.read")
+		if status, body := call(t, endpoint, "merch", wrong); status != http.StatusForbidden {
+			t.Fatalf("wrong permission %s status=%d body=%s", endpoint, status, body)
+		}
+		outOfScope := sign(t, issuer, "merch", "/merch/identity/apps", "identity.domain.read")
+		if status, body := call(t, endpoint, "merch", outOfScope); status != http.StatusForbidden {
+			t.Fatalf("out of scope %s status=%d body=%s", endpoint, status, body)
+		}
+	}
+}
+
 func TestMerchSubscriptionRequiresDedicatedReadPermission(t *testing.T) {
 	issuer, keys := testKeys(t)
 	base := startServer(t, keys)
@@ -663,6 +986,53 @@ func TestMerchSubscriptionRequiresDedicatedReadPermission(t *testing.T) {
 		if status, body := call(t, endpoint, "merch", outOfScope); status != http.StatusForbidden {
 			t.Fatalf("out of scope %s status=%d body=%s", endpoint, status, body)
 		}
+	}
+}
+
+func TestMerchMembersRequireOwnerAndStaffManagePermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	list := base + "/merch/identity/members?page=1&pageSize=20"
+	granted := signMerchOwner(t, issuer, "/merch/identity/members", 2001, "identity.staff.manage")
+	if status, body := call(t, list, "merch", granted); status != http.StatusOK {
+		t.Fatalf("list granted status=%d body=%s", status, body)
+	}
+	staff := signMerchShop(t, issuer, "/merch/identity/members", 2001, 0, "identity.staff.manage")
+	if status, body := call(t, list, "merch", staff); status != http.StatusForbidden {
+		t.Fatalf("staff list status=%d body=%s", status, body)
+	}
+	wrong := signMerchOwner(t, issuer, "/merch/identity/members", 2001, "identity.session.manage")
+	if status, body := call(t, list, "merch", wrong); status != http.StatusForbidden {
+		t.Fatalf("wrong permission status=%d body=%s", status, body)
+	}
+	outOfScope := signMerchOwner(t, issuer, "/merch/identity/shops", 2001, "identity.staff.manage")
+	if status, body := call(t, list, "merch", outOfScope); status != http.StatusForbidden {
+		t.Fatalf("out of scope status=%d body=%s", status, body)
+	}
+	createBody := `{"idempotencyKey":"member-create-1","operationId":"member-create-1","displayName":"Ada","memberType":"STAFF","username":"ada","password":"password1","shopIds":[3001],"roleIds":[1]}`
+	if status, payload := callJSON(t, http.MethodPost, base+"/merch/identity/members", "merch", granted, createBody); status != http.StatusOK {
+		t.Fatalf("create granted status=%d body=%s", status, payload)
+	}
+	if status, payload := callJSON(t, http.MethodPost, base+"/merch/identity/members", "merch", staff, createBody); status != http.StatusForbidden {
+		t.Fatalf("staff create status=%d body=%s", status, payload)
+	}
+}
+
+func TestMerchMemberSessionsRequireSessionManagePermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	endpoint := base + "/merch/identity/members/managed-user/sessions"
+	granted := signMerchOwner(t, issuer, "/merch/identity/members", 2001, "identity.session.manage")
+	if status, body := call(t, endpoint, "merch", granted); status != http.StatusOK {
+		t.Fatalf("granted status=%d body=%s", status, body)
+	}
+	staffManage := signMerchOwner(t, issuer, "/merch/identity/members", 2001, "identity.staff.manage")
+	if status, body := call(t, endpoint, "merch", staffManage); status != http.StatusForbidden {
+		t.Fatalf("staff.manage must not reach sessions status=%d body=%s", status, body)
+	}
+	staff := signMerchShop(t, issuer, "/merch/identity/members", 2001, 0, "identity.session.manage")
+	if status, body := call(t, endpoint, "merch", staff); status != http.StatusForbidden {
+		t.Fatalf("staff session status=%d body=%s", status, body)
 	}
 }
 
@@ -912,6 +1282,235 @@ func TestMerchRiskEventsRequiresRiskRead(t *testing.T) {
 	}
 }
 
+func TestMerchComplaintsRequiresComplaintPermissions(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	list := base + "/merch/identity/complaints"
+	granted := signMerchShop(t, issuer, "/merch/identity/complaints", 2001, 3001, "identity.complaint.read")
+	status, body := call(t, list, "merch", granted)
+	if status != http.StatusOK {
+		t.Fatalf("granted status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"customerSubject":"cust-1001"`) || !strings.Contains(body, `"reasonCode":"quality"`) {
+		t.Fatalf("granted body missing complaint: %s", body)
+	}
+	detail := base + "/merch/identity/complaints/11"
+	if status, body := call(t, detail, "merch", granted); status != http.StatusOK || !strings.Contains(body, `"id":11`) {
+		t.Fatalf("detail status=%d body=%s", status, body)
+	}
+	wrong := signMerchShop(t, issuer, "/merch/identity/complaints", 2001, 3001, "identity.organization.read")
+	if status, body := call(t, list, "merch", wrong); status != http.StatusForbidden {
+		t.Fatalf("wrong permission status=%d body=%s", status, body)
+	}
+	outOfScope := signMerchShop(t, issuer, "/merch/identity/privacy", 2001, 3001, "identity.complaint.read")
+	if status, body := call(t, list, "merch", outOfScope); status != http.StatusForbidden {
+		t.Fatalf("out of scope status=%d body=%s", status, body)
+	}
+	review := base + "/merch/identity/complaints/11/review"
+	readOnly := signMerchShop(t, issuer, "/merch/identity/complaints", 2001, 3001, "identity.complaint.read")
+	if status, body := callJSON(t, http.MethodPost, review, "merch", readOnly, `{"commandKey":"review-0001","expectedVersion":1,"status":"ACCEPTED","handleNote":"已核对订单并同意处理"}`); status != http.StatusForbidden {
+		t.Fatalf("read-only review status=%d body=%s", status, body)
+	}
+	manager := signMerchShop(t, issuer, "/merch/identity/complaints", 2001, 3001, "identity.complaint.manage")
+	status, body = callJSON(t, http.MethodPost, review, "merch", manager, `{"commandKey":"review-0001","expectedVersion":1,"status":"ACCEPTED","handleNote":"已核对订单并同意处理"}`)
+	if status != http.StatusOK {
+		t.Fatalf("manage review status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"status":"ACCEPTED"`) || !strings.Contains(body, `"replayed":false`) {
+		t.Fatalf("manage review body=%s", body)
+	}
+}
+
+func TestMerchAftersalesRequiresAftersalePermissions(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	list := base + "/merch/identity/aftersales"
+	granted := signMerchShop(t, issuer, "/merch/identity/aftersales", 2001, 3001, "identity.aftersale.read")
+	status, body := call(t, list, "merch", granted)
+	if status != http.StatusOK {
+		t.Fatalf("granted status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"customerSubject":"cust-2001"`) || !strings.Contains(body, `"reason":"尺码不合适"`) {
+		t.Fatalf("granted body missing aftersale: %s", body)
+	}
+	detail := base + "/merch/identity/aftersales/21"
+	if status, body := call(t, detail, "merch", granted); status != http.StatusOK || !strings.Contains(body, `"id":21`) {
+		t.Fatalf("detail status=%d body=%s", status, body)
+	}
+	wrong := signMerchShop(t, issuer, "/merch/identity/aftersales", 2001, 3001, "identity.organization.read")
+	if status, body := call(t, list, "merch", wrong); status != http.StatusForbidden {
+		t.Fatalf("wrong permission status=%d body=%s", status, body)
+	}
+	outOfScope := signMerchShop(t, issuer, "/merch/identity/privacy", 2001, 3001, "identity.aftersale.read")
+	if status, body := call(t, list, "merch", outOfScope); status != http.StatusForbidden {
+		t.Fatalf("out of scope status=%d body=%s", status, body)
+	}
+	review := base + "/merch/identity/aftersales/21/review"
+	readOnly := signMerchShop(t, issuer, "/merch/identity/aftersales", 2001, 3001, "identity.aftersale.read")
+	if status, body := callJSON(t, http.MethodPost, review, "merch", readOnly, `{"commandKey":"review-0021","expectedVersion":1,"status":"APPROVED","handleNote":"同意退货退款"}`); status != http.StatusForbidden {
+		t.Fatalf("read-only review status=%d body=%s", status, body)
+	}
+	manager := signMerchShop(t, issuer, "/merch/identity/aftersales", 2001, 3001, "identity.aftersale.manage")
+	status, body = callJSON(t, http.MethodPost, review, "merch", manager, `{"commandKey":"review-0021","expectedVersion":1,"status":"APPROVED","handleNote":"同意退货退款"}`)
+	if status != http.StatusOK {
+		t.Fatalf("manage review status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"status":"APPROVED"`) || !strings.Contains(body, `"replayed":false`) {
+		t.Fatalf("manage review body=%s", body)
+	}
+	receive := base + "/merch/identity/aftersales/21/returns"
+	if status, body := callJSON(t, http.MethodPost, receive, "merch", readOnly, `{"commandKey":"return-0021","expectedVersion":1}`); status != http.StatusForbidden {
+		t.Fatalf("read-only return status=%d body=%s", status, body)
+	}
+	status, body = callJSON(t, http.MethodPost, receive, "merch", manager, `{"commandKey":"return-0021","expectedVersion":2}`)
+	if status != http.StatusOK || !strings.Contains(body, `"returnStatus":"RECEIVED"`) {
+		t.Fatalf("manage return status=%d body=%s", status, body)
+	}
+}
+
+func TestMerchShipmentsRequiresShipmentPermissions(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	list := base + "/merch/identity/shipments"
+	granted := signMerchShop(t, issuer, "/merch/identity/shipments", 2001, 3001, "identity.shipment.read")
+	status, body := call(t, list, "merch", granted)
+	if status != http.StatusOK {
+		t.Fatalf("granted status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"orderId":8801`) || !strings.Contains(body, `"trackingNo":"SF1234567890"`) {
+		t.Fatalf("granted body missing shipment: %s", body)
+	}
+	detail := base + "/merch/identity/shipments/11"
+	if status, body := call(t, detail, "merch", granted); status != http.StatusOK || !strings.Contains(body, `"id":11`) {
+		t.Fatalf("detail status=%d body=%s", status, body)
+	}
+	wrong := signMerchShop(t, issuer, "/merch/identity/shipments", 2001, 3001, "identity.organization.read")
+	if status, body := call(t, list, "merch", wrong); status != http.StatusForbidden {
+		t.Fatalf("wrong permission status=%d body=%s", status, body)
+	}
+	outOfScope := signMerchShop(t, issuer, "/merch/identity/privacy", 2001, 3001, "identity.shipment.read")
+	if status, body := call(t, list, "merch", outOfScope); status != http.StatusForbidden {
+		t.Fatalf("out of scope status=%d body=%s", status, body)
+	}
+	create := base + "/merch/identity/shipments"
+	readOnly := signMerchShop(t, issuer, "/merch/identity/shipments", 2001, 3001, "identity.shipment.read")
+	if status, body := callJSON(t, http.MethodPost, create, "merch", readOnly, `{"commandKey":"ship-0001","orderId":8801,"carrier":"顺丰速运","trackingNo":"SF1234567890"}`); status != http.StatusForbidden {
+		t.Fatalf("read-only create status=%d body=%s", status, body)
+	}
+	manager := signMerchShop(t, issuer, "/merch/identity/shipments", 2001, 3001, "identity.shipment.manage")
+	status, body = callJSON(t, http.MethodPost, create, "merch", manager, `{"commandKey":"ship-0001","orderId":8801,"carrier":"顺丰速运","trackingNo":"SF1234567890"}`)
+	if status != http.StatusOK {
+		t.Fatalf("manage create status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"status":"SHIPPED"`) || !strings.Contains(body, `"replayed":false`) {
+		t.Fatalf("manage create body=%s", body)
+	}
+	trace := base + "/merch/identity/shipments/11/traces"
+	if status, body := callJSON(t, http.MethodPost, trace, "merch", readOnly, `{"commandKey":"trace-0001","expectedVersion":1,"node":"运输中"}`); status != http.StatusForbidden {
+		t.Fatalf("read-only trace status=%d body=%s", status, body)
+	}
+	status, body = callJSON(t, http.MethodPost, trace, "merch", manager, `{"commandKey":"trace-0001","expectedVersion":1,"node":"运输中"}`)
+	if status != http.StatusOK || !strings.Contains(body, `"node":"运输中"`) {
+		t.Fatalf("manage trace status=%d body=%s", status, body)
+	}
+	closeURL := base + "/merch/identity/shipments/11/close"
+	if status, body := callJSON(t, http.MethodPost, closeURL, "merch", readOnly, `{"commandKey":"close-0001","expectedVersion":1}`); status != http.StatusForbidden {
+		t.Fatalf("read-only close status=%d body=%s", status, body)
+	}
+	status, body = callJSON(t, http.MethodPost, closeURL, "merch", manager, `{"commandKey":"close-0001","expectedVersion":1}`)
+	if status != http.StatusOK {
+		t.Fatalf("manage close status=%d body=%s", status, body)
+	}
+	if !strings.Contains(body, `"status":"DELIVERED"`) || !strings.Contains(body, `"replayed":false`) {
+		t.Fatalf("manage close body=%s", body)
+	}
+}
+
+func TestMerchShippingDeliveryRequireDedicatedReadPermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	for _, endpoint := range []string{
+		base + "/merch/identity/shipping-delivery/shops",
+		base + "/merch/identity/shipping-delivery/rules?shopId=3001&page=1&pageSize=20",
+		base + "/merch/identity/shipping-delivery/presets?shopId=3001&page=1&pageSize=20",
+	} {
+		granted := signMerchShop(t, issuer, "/merch/identity/shipping-delivery", 2001, 3001, "identity.shipping.read")
+		if status, body := call(t, endpoint, "merch", granted); status != http.StatusOK {
+			t.Fatalf("granted %s status=%d body=%s", endpoint, status, body)
+		}
+		wrong := signMerchShop(t, issuer, "/merch/identity/shipping-delivery", 2001, 3001, "identity.app.read")
+		if status, body := call(t, endpoint, "merch", wrong); status != http.StatusForbidden {
+			t.Fatalf("wrong permission %s status=%d body=%s", endpoint, status, body)
+		}
+		outOfScope := signMerchShop(t, issuer, "/merch/identity/apps", 2001, 3001, "identity.shipping.read")
+		if status, body := call(t, endpoint, "merch", outOfScope); status != http.StatusForbidden {
+			t.Fatalf("out of scope %s status=%d body=%s", endpoint, status, body)
+		}
+	}
+	readOnly := signMerchShop(t, issuer, "/merch/identity/shipping-delivery", 2001, 3001, "identity.shipping.read")
+	create := base + "/merch/identity/shipping-delivery/rules"
+	if status, body := callJSON(t, http.MethodPost, create, "merch", readOnly, `{"commandKey":"rule-create-0001","shopId":3001,"name":"美国标准","regions":"US","feeFen":800,"minDays":3,"maxDays":7}`); status != http.StatusForbidden {
+		t.Fatalf("read-only create status=%d body=%s", status, body)
+	}
+	manager := signMerchShop(t, issuer, "/merch/identity/shipping-delivery", 2001, 3001, "identity.shipping.manage")
+	status, body := callJSON(t, http.MethodPost, create, "merch", manager, `{"commandKey":"rule-create-0001","shopId":3001,"name":"美国标准","regions":"US","feeFen":800,"minDays":3,"maxDays":7}`)
+	if status != http.StatusOK || !strings.Contains(body, `"name":"美国标准"`) {
+		t.Fatalf("manage create status=%d body=%s", status, body)
+	}
+}
+
+func TestMerchCustomerAccountsRequiresDedicatedPermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	for _, endpoint := range []string{
+		base + "/merch/identity/customer-accounts/shops",
+		base + "/merch/identity/customer-accounts?page=1&pageSize=20",
+	} {
+		granted := signMerchShop(t, issuer, "/merch/identity/customer-accounts", 2001, 3001, "identity.customer-account.manage")
+		status, body := call(t, endpoint, "merch", granted)
+		if status != http.StatusOK {
+			t.Fatalf("%s granted status=%d body=%s", endpoint, status, body)
+		}
+		if strings.Contains(endpoint, "/shops") {
+			if !strings.Contains(body, `"shopId":3001`) {
+				t.Fatalf("%s granted body missing shop: %s", endpoint, body)
+			}
+		} else if !strings.Contains(body, `"account":"support"`) {
+			t.Fatalf("%s granted body missing account: %s", endpoint, body)
+		}
+		wrong := signMerchShop(t, issuer, "/merch/identity/customer-accounts", 2001, 3001, "identity.organization.read")
+		if status, body := call(t, endpoint, "merch", wrong); status != http.StatusForbidden {
+			t.Fatalf("%s wrong permission status=%d body=%s", endpoint, status, body)
+		}
+		outOfScope := signMerchShop(t, issuer, "/merch/identity/privacy", 2001, 3001, "identity.customer-account.manage")
+		if status, body := call(t, endpoint, "merch", outOfScope); status != http.StatusForbidden {
+			t.Fatalf("%s out of scope status=%d body=%s", endpoint, status, body)
+		}
+	}
+}
+
+func TestMerchCustomerAccountsRequireDedicatedManagePermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	for _, endpoint := range []string{
+		base + "/merch/identity/customer-accounts/shops",
+		base + "/merch/identity/customer-accounts?page=1&pageSize=20",
+	} {
+		granted := signMerchOwner(t, issuer, "/merch/identity/customer-accounts", 2001, "identity.customer-account.manage")
+		if status, body := call(t, endpoint, "merch", granted); status != http.StatusOK {
+			t.Fatalf("granted %s status=%d body=%s", endpoint, status, body)
+		}
+		wrong := signMerchOwner(t, issuer, "/merch/identity/customer-accounts", 2001, "identity.shop.read")
+		if status, body := call(t, endpoint, "merch", wrong); status != http.StatusForbidden {
+			t.Fatalf("wrong permission %s status=%d body=%s", endpoint, status, body)
+		}
+		outOfScope := signMerchOwner(t, issuer, "/merch/identity/shops", 2001, "identity.customer-account.manage")
+		if status, body := call(t, endpoint, "merch", outOfScope); status != http.StatusForbidden {
+			t.Fatalf("out of scope %s status=%d body=%s", endpoint, status, body)
+		}
+	}
+}
+
 func TestMutationRejectsStaleCapabilityAuthorization(t *testing.T) {
 	issuer, keys := testKeys(t)
 	base := startServerWithUsers(t, keys, stubUsers{currentErr: model.ErrAuthorizationDenied})
@@ -932,6 +1531,26 @@ func TestMutationRejectsStaleCapabilityAuthorization(t *testing.T) {
 		body, _ := io.ReadAll(response.Body)
 		t.Fatalf("stale mutation status=%d body=%s", response.StatusCode, body)
 	}
+}
+
+type stubOTPRepository struct{}
+
+func (stubOTPRepository) CreatePending(_ context.Context, record authmodel.Record) (authmodel.Record, error) {
+	record.MerchantID = 2001
+	record.ShopID = 3001
+	return record, nil
+}
+func (stubOTPRepository) Consume(context.Context, authmodel.VerifyCommand, string, time.Time) error {
+	return nil
+}
+func (stubOTPRepository) Get(context.Context, string) (authmodel.Record, error) {
+	return authmodel.Record{}, authmodel.ErrNotFound
+}
+
+type stubOTPNotifier struct{}
+
+func (stubOTPNotifier) Dispatch(context.Context, auth.Dispatch) ([]authmodel.Delivery, error) {
+	return []authmodel.Delivery{{Channel: "SMS", Status: authmodel.StatusSent}}, nil
 }
 
 // startServer assembles the process the way main does, minus the database, and
@@ -957,8 +1576,14 @@ func startServerWithUsers(t *testing.T, keys map[string]string, users stubUsers)
 		Privacy:            shop.NewPrivacySettings(stubPrivacy{}),
 		Policies:           shop.NewPolicies(stubPolicies{}),
 		Apps:               shop.NewPrivateApps(stubApps{}),
+		Domains:            shop.NewCustomDomains(stubDomains{}, nil, ""),
 		CustomerService:    customer_service.NewAccounts(stubCustomerService{}),
 		RiskEvents:         risk.NewEvents(stubRiskEvents{}),
+		Complaints:         fulfillment.NewComplaints(stubComplaints{}),
+		Aftersales:         fulfillment.NewAftersales(stubAftersales{}),
+		Shipments:          fulfillment.NewShipments(stubShipments{}),
+		Shipping:           fulfillment.NewShipping(stubShipping{}),
+		OTP:                auth.NewOTP(stubOTPRepository{}, stubOTPNotifier{}),
 		MerchantGovernance: merchant_governance.NewCapabilities(stubMerchantGovernance{}),
 		Assignments:        subscription.NewAssignments(stubAssignments{}),
 		Orders:             subscription.NewOrders(stubOrders{}),

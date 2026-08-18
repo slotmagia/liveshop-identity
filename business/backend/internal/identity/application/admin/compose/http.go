@@ -64,11 +64,21 @@ func (h *HTTP) PutLiveProviders(ctx context.Context, input appmodel.PutMerchantL
 	return out, err
 }
 
+func (h *HTTP) EdgeSnapshot(ctx context.Context) (EdgeSnapshot, error) {
+	var out EdgeSnapshot
+	err := h.get(ctx, h.platform, "/internal/v1/edge/snapshot", nil, &out)
+	return out, err
+}
+
 func (h *HTTP) get(ctx context.Context, origin, path string, query url.Values, out any) error {
 	if origin == "" {
 		return ErrUnavailable
 	}
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, origin+path+"?"+query.Encode(), nil)
+	target := origin + path
+	if len(query) > 0 {
+		target += "?" + query.Encode()
+	}
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target, nil)
 	if err != nil {
 		return err
 	}

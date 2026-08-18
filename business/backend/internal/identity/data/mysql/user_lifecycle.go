@@ -43,7 +43,7 @@ FROM identity_subject s JOIN identity_workforce_member wm ON wm.subject=s.subjec
 LEFT JOIN identity_credential c ON c.credential_id=(SELECT MIN(c2.credential_id) FROM identity_credential c2 WHERE c2.subject=s.subject AND c2.status<>'CLOSED')`
 
 func scopePredicate() string {
-	return ` wm.organization_id=? AND ((?=0 AND wm.merchant_id IS NULL AND wm.member_type='OPERATOR') OR (? > 0 AND wm.merchant_id=? AND wm.member_type IN ('STAFF','ANCHOR')))`
+	return ` wm.organization_id=? AND wm.status<>'REVOKED' AND ((?=0 AND wm.merchant_id IS NULL AND wm.member_type='OPERATOR') OR (? > 0 AND wm.merchant_id=? AND wm.member_type IN ('STAFF','ANCHOR')))`
 }
 
 func scopeArgs(scope biz.UserScope) []any {

@@ -42,6 +42,14 @@ func (c *UserController) List(ctx context.Context, r *api.ListReq) (*api.ListRes
 	return out, nil
 }
 
+func (c *UserController) Create(ctx context.Context, r *api.CreateReq) (*api.CreateRes, error) {
+	value, err := c.s.CreateMember(ctx, appmodel.CreateMember{IdempotencyKey: r.IdempotencyKey, OperationID: r.OperationID, DisplayName: r.DisplayName, MemberType: r.MemberType, Username: r.Username, Password: r.Password, UnitIDs: r.UnitIDs, ShopIDs: r.ShopIDs, RoleIDs: r.RoleIDs})
+	if err != nil {
+		return nil, web.Failure(err)
+	}
+	return &api.CreateRes{MemberID: value.MemberID, Subject: value.Subject, Status: value.Status, OperationID: value.OperationID, Version: value.Version}, nil
+}
+
 func (c *UserController) Detail(ctx context.Context, r *api.DetailReq) (*api.DetailRes, error) {
 	value, err := c.s.Member(ctx, r.Subject)
 	if err != nil {

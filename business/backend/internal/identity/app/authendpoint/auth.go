@@ -214,7 +214,7 @@ func (e *Endpoint) Switch(ctx context.Context, request *SwitchReq) (*SwitchRes, 
 func (e *Endpoint) loginResponse(session biz.AuthenticatedSession, username string) (*LoginRes, error) {
 	claims := accessidentity.Claims{Subject: session.Subject.ID, Realm: session.Subject.Realm, PrincipalType: session.Subject.PrincipalType,
 		SessionID: session.SessionID, OrganizationID: session.Organization.ID, MerchantID: session.Selected.MerchantID,
-		ShopID: session.Selected.ShopID,
+		ShopID:         session.Selected.ShopID,
 		ContextVersion: session.ContextVersion, IdentityVersion: session.Subject.Version}
 	if claims.MerchantID == 0 {
 		claims.MerchantID = session.Member.MerchantID

@@ -1,5 +1,5 @@
 import type { HostHttpClient } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, definitionList, page, statusLine, ui } from '@liveshop/design-tokens'
+import { badge, button, create, dataCard, definitionList, emptyState, grid, notify, page, ui } from '@liveshop/design-tokens'
 
 interface MerchantProfile {
   merchantId: number
@@ -15,12 +15,27 @@ interface MerchantProfile {
   owner: boolean
 }
 
+interface SaveResult {
+  profile: MerchantProfile
+  replayed: boolean
+}
+
 const prefix = '/merch/identity/profile'
 
 function field(label: string, control: HTMLElement): HTMLElement {
   const node = create('label', ui.field)
   node.append(create('span', undefined, label), control)
   return node
+}
+
+function textInput(value: string, placeholder: string, maxLength: number, disabled: boolean): HTMLInputElement {
+  const input = document.createElement('input')
+  input.className = ui.input
+  input.maxLength = maxLength
+  input.placeholder = placeholder
+  input.value = value
+  input.disabled = disabled
+  return input
 }
 
 function option(label: string, checked: boolean, disabled: boolean): { row: HTMLElement; input: HTMLInputElement } {
@@ -41,7 +56,6 @@ function statusBadge(status: string): HTMLElement {
 }
 
 export async function renderProfile(root: HTMLElement, api: HostHttpClient): Promise<void> {
-  const state = statusLine()
   const body = create('div', 'identity-profile-form')
   let current: MerchantProfile | undefined
   let externalId: HTMLInputElement
@@ -53,75 +67,77 @@ export async function renderProfile(root: HTMLElement, api: HostHttpClient): Pro
 
   function renderForm(value: MerchantProfile): void {
     const disabled = !value.owner
-    const emailOption = option('接收平台邮件营销', value.marketingEmailOptIn, disabled)
-    const smsOption = option('接收平台短信营销', value.marketingSmsOptIn, disabled)
+    const emailOption = option('同意接收营销电子邮件', value.marketingEmailOptIn, disabled)
+    const smsOption = option('同意接收营销短信', value.marketingSmsOptIn, disabled)
     marketingEmail = emailOption.input
     marketingSms = smsOption.input
-    externalId = document.createElement('input')
-    externalId.className = ui.input
-    externalId.maxLength = 64
-    externalId.placeholder = '外部编号'
-    externalId.value = value.externalId
-    externalId.disabled = disabled
-    contactName = document.createElement('input')
-    contactName.className = ui.input
-    contactName.maxLength = 128
-    contactName.placeholder = '联系人'
-    contactName.value = value.contactName
-    contactName.disabled = disabled
-    contactPhone = document.createElement('input')
-    contactPhone.className = ui.input
-    contactPhone.maxLength = 32
-    contactPhone.placeholder = '联系电话'
-    contactPhone.value = value.contactPhone
-    contactPhone.disabled = disabled
+    externalId = textInput(value.externalId, '外部对接编号（可选）', 64, disabled)
+    contactName = textInput(value.contactName, '主要联系人', 128, disabled)
+    contactPhone = textInput(value.contactPhone, '电话', 32, disabled)
+    const marketing = create('div', 'identity-profile-marketing')
+    marketing.append(
+      create('p', 'identity-profile-caption', '营销状态'),
+      emailOption.row,
+      smsOption.row,
+      create('p', 'identity-profile-hint', '在为该商户发送营销邮件或短信之前，应征得其许可。这是商户收平台触达的偏好，不是店铺顾客营销同意。'),
+    )
     body.replaceChildren(
-      create('p', undefined, '维护当前商户对外编号、联系人和平台营销触达偏好。公司名、登录账号和状态由总后台商户管理维护，本页只读。营销开关是商户收平台触达的偏好，不是店铺顾客营销同意。'),
       definitionList([
         { label: '商户名称', value: value.name || '—' },
         { label: '登录账号', value: value.account || '—' },
         { label: '商户状态', value: statusBadge(value.status) },
-        { label: '商户 ID', value: String(value.merchantId || '—') },
       ]),
-      field('外部编号', externalId),
-      field('联系人', contactName),
-      field('联系电话', contactPhone),
-      emailOption.row,
-      smsOption.row,
+      field('公司 ID', externalId),
+      grid([field('联系人', contactName), field('电话', contactPhone)]),
+      marketing,
     )
   }
 
   async function load(): Promise<void> {
-    state.set('正在加载商户信息…')
+    saveButton.disabled = true
     try {
       current = await api.request<MerchantProfile>(prefix)
       renderForm(current)
       saveButton.disabled = !current.owner
-      state.set(current.owner ? `版本 ${current.version}` : `版本 ${current.version} · 仅所有者可改`, current.owner ? 'neutral' : 'warning')
+      if (!current.owner) notify('仅商户所有者可以保存商户信息。', 'warning')
     } catch (error) {
       current = undefined
-      saveButton.disabled = true
-      body.replaceChildren()
-      state.set(`商户信息加载失败：${String(error)}`, 'danger')
+      body.replaceChildren(emptyState('当前无法加载商户信息'))
+      notify(`商户信息加载失败：${String(error)}`, 'danger')
     }
   }
 
   async function save(): Promise<void> {
     if (!current) return
     if (!current.owner) {
-      state.set('仅商户所有者可以保存商户信息。', 'warning')
+      notify('仅商户所有者可以保存商户信息。', 'warning')
       return
     }
-    state.set('正在保存…')
+    const nextExternalId = externalId.value.trim()
+    const nextContactName = contactName.value.trim()
+    const nextContactPhone = contactPhone.value.trim()
+    if ([...nextExternalId].length > 64) {
+      notify('公司 ID 最长 64 个字符。', 'danger')
+      return
+    }
+    if ([...nextContactName].length > 128) {
+      notify('联系人最长 128 个字符。', 'danger')
+      return
+    }
+    if ([...nextContactPhone].length > 32) {
+      notify('电话最长 32 个字符。', 'danger')
+      return
+    }
+    saveButton.disabled = true
     try {
-      const result = await api.request<{ profile: MerchantProfile }>(prefix, {
+      const result = await api.request<SaveResult>(prefix, {
         method: 'PUT',
         body: JSON.stringify({
           commandKey: crypto.randomUUID(),
           expectedVersion: current.version,
-          externalId: externalId.value.trim(),
-          contactName: contactName.value.trim(),
-          contactPhone: contactPhone.value.trim(),
+          externalId: nextExternalId,
+          contactName: nextContactName,
+          contactPhone: nextContactPhone,
           marketingEmailOptIn: marketingEmail.checked,
           marketingSmsOptIn: marketingSms.checked,
         }),
@@ -129,21 +145,21 @@ export async function renderProfile(root: HTMLElement, api: HostHttpClient): Pro
       current = result.profile
       renderForm(current)
       saveButton.disabled = !current.owner
-      state.set(`已保存 · 版本 ${current.version}`, 'success')
+      notify(result.replayed ? '该保存命令已存在，已返回原记录' : '已保存', 'success')
     } catch (error) {
-      state.set(`保存失败：${String(error)}`, 'danger')
+      saveButton.disabled = !current.owner
+      notify(`保存失败：${String(error)}`, 'danger')
     }
   }
 
   root.replaceChildren(page({
     showSummary: false,
     children: dataCard({
-      title: '商户信息',
+      title: '联系与对接',
       actions: [
         button({ label: '刷新', variant: 'secondary', onClick: () => void load() }),
         saveButton,
       ],
-      status: state.element,
       body,
     }),
   }))

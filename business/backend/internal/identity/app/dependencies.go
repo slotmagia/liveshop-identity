@@ -22,7 +22,9 @@ import (
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/app/registrysync"
 	admincompose "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/admin/compose"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant_governance"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/risk"
@@ -30,13 +32,16 @@ import (
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/subscription"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/common/middleware"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/config"
+	authdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/auth"
 	customerservicedata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/customer_service"
+	fulfillmentdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/fulfillment"
 	merchantdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/merchant"
 	governancedata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/merchant_governance"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/mysql"
 	riskdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/risk"
 	shopdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/shop"
 	subscriptiondata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/subscription"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/infra/notification"
 )
 
 // Dependencies holds the use cases every surface is built from, plus the
@@ -60,8 +65,15 @@ type Dependencies struct {
 	Privacy            *shop.PrivacySettings
 	Policies           *shop.Policies
 	Apps               *shop.PrivateApps
+	Domains            *shop.CustomDomains
 	CustomerService    *customer_service.Accounts
 	RiskEvents         *risk.Events
+	Complaints         *fulfillment.Complaints
+	Aftersales         *fulfillment.Aftersales
+	Shipments          *fulfillment.Shipments
+	Shipping           *fulfillment.Shipping
+	OTP                *auth.OTP
+	Notification       *notification.Client
 	MerchantGovernance *merchant_governance.Capabilities
 	Assignments        *subscription.Assignments
 	Orders             *subscription.Orders
@@ -95,8 +107,14 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 	privacy := shop.NewPrivacySettings(shopdata.NewPrivacyRepository(database))
 	policies := shop.NewPolicies(shopdata.NewPolicyRepository(database))
 	apps := shop.NewPrivateApps(shopdata.NewAppRepository(database))
+	domains := shop.NewCustomDomains(shopdata.NewDomainRepository(database), shop.LookupTXT, settings.Compose.DomainCNAMETarget)
 	customerService := customer_service.NewAccounts(customerservicedata.NewRepository(database))
 	riskEvents := risk.NewEvents(riskdata.NewRepository(database))
+	fulfillmentRepo := fulfillmentdata.NewRepository(database)
+	complaints := fulfillment.NewComplaints(fulfillmentRepo)
+	aftersales := fulfillment.NewAftersales(fulfillmentRepo)
+	shipments := fulfillment.NewShipments(fulfillmentRepo)
+	shipping := fulfillment.NewShipping(fulfillmentRepo)
 	merchantGovernance := merchant_governance.NewCapabilities(governancedata.NewRepository(database))
 	assignments := subscription.NewAssignments(subscriptiondata.NewAssignmentRepository(database))
 	orders := subscription.NewOrders(subscriptiondata.NewOrderRepository(database))
@@ -196,6 +214,13 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 		_ = database.Close()
 		return nil, fmt.Errorf("identity: initial Subscription entitlement sync failed: %w", err)
 	}
+	notifyClient, err := notification.New(settings.PlatformRegistry)
+	if err != nil {
+		_ = entitlementSync.Close()
+		_ = registrySync.Close()
+		_ = database.Close()
+		return nil, err
+	}
 	return &Dependencies{
 		Config:             settings,
 		Health:             biz.NewHealth(healthRepository),
@@ -215,8 +240,15 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 		Privacy:            privacy,
 		Policies:           policies,
 		Apps:               apps,
+		Domains:            domains,
 		CustomerService:    customerService,
 		RiskEvents:         riskEvents,
+		Complaints:         complaints,
+		Aftersales:         aftersales,
+		Shipments:          shipments,
+		Shipping:           shipping,
+		OTP:                auth.NewOTP(authdata.NewRepository(database), notifyClient),
+		Notification:       notifyClient,
 		MerchantGovernance: merchantGovernance,
 		Assignments:        assignments,
 		Orders:             orders,
@@ -257,6 +289,9 @@ func newAccessIdentity(settings config.AccessIdentity) (*accessidentity.Issuer, 
 }
 
 func (d *Dependencies) Close() error {
+	if d.Notification != nil {
+		_ = d.Notification.Close()
+	}
 	if d.RegistrySync != nil {
 		_ = d.RegistrySync.Close()
 	}

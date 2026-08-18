@@ -1,5 +1,5 @@
 import type { RemoteModuleContext } from '@liveshop/host-sdk'
-import { create } from '@liveshop/design-tokens'
+import { create, notify } from '@liveshop/design-tokens'
 import { cta, featureScaffold } from '@liveshop/design-tokens/storefront'
 
 const pages: Record<string, { title: string; description: string; metrics: string[]; sections: Array<[string, string, string[]]>; action?: [string, string] }> = {
@@ -7,12 +7,6 @@ const pages: Record<string, { title: string; description: string; metrics: strin
     title: '我的 LiveShop', description: '个人中心组合身份信息、订单摘要、钱包、优惠券、地址和售后入口，摘要区域独立失败。',
     metrics: ['待付款', '待发货', '待收货', '售后中'],
     sections: [['账', '账户与安全', ['个人资料', '登录与设备', '隐私设置']], ['址', '收货地址', ['默认地址', '新增与编辑', '结算回跳']], ['服', '客户服务', ['售后进度', '投诉与协商', '物流协作']]],
-  },
-  'identity.placeholder.shop.login': {
-    title: '买家登录', description: '支持手机号、邮箱和验证码登录，并把当前店铺游客会话安全升级为顾客会话。',
-    metrics: ['手机号登录', '邮箱登录', '验证码挑战', '游客绑定'],
-    sections: [['验', '验证码挑战', ['Identity 创建并核验挑战', 'Platform 只负责短信或邮件投递']], ['客', '游客升级', ['保留当前店铺范围', '购物车归并必须幂等']], ['安', '会话安全', ['刷新会话', '设备与风险校验']]],
-    action: ['返回个人中心', '/profile'],
   },
   'identity.placeholder.shop.aftersales': {
     title: '我的售后', description: '按申请类型和处理状态展示售后工单，退款资金状态由 Trade 提供摘要。',
@@ -50,6 +44,10 @@ export function renderIdentityScaffold(container: HTMLElement, context: RemoteMo
     renderProfile(container, context)
     return
   }
+  if (context.contributionId === 'identity.shop.login') {
+    renderLogin(container, context)
+    return
+  }
   const page = pages[context.contributionId]
   if (!page) return
   const actions = page.action ? cta({ label: page.action[0], onClick: () => context.navigate(page.action![1]) }) : undefined
@@ -58,6 +56,77 @@ export function renderIdentityScaffold(container: HTMLElement, context: RemoteMo
     metrics: page.metrics.map(label => ({ label, value: '—' })),
     sections: page.sections.map(([icon, title, items]) => ({ icon, title, description: '等待对应顾客领域契约与真实数据接入。', items })),
   }))
+}
+
+function renderLogin(container: HTMLElement, context: RemoteModuleContext): void {
+  const shopCode = new URLSearchParams(window.location.search).get('shopCode') || ''
+  const root = create('main', 'identity-login')
+  const card = create('section', 'identity-login__card')
+  card.append(create('p', 'identity-login__brand', 'WOKFOY'))
+  card.append(create('h1', '', '登录 / 注册'))
+  card.append(create('p', 'identity-login__copy', '输入店铺编码和手机或邮箱，获取验证码。本页核验挑战，不升级游客会话。'))
+
+  const shop = field('店铺编码', 'text', shopCode, 'shop-code')
+  const phone = field('手机号', 'tel', '', 'phone')
+  const email = field('邮箱', 'email', '', 'email')
+  const code = field('验证码', 'text', '', 'otp-code')
+  code.input.maxLength = 6
+  card.append(shop.wrap, phone.wrap, email.wrap, code.wrap)
+
+  let challengeId = ''
+  const send = create('button', 'identity-login__secondary', '获取验证码')
+  send.type = 'button'
+  send.addEventListener('click', () => {
+    send.disabled = true
+    context.api.request<{ challengeId: string }>('/shop/identity/login/otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shopCode: shop.input.value.trim(), phone: phone.input.value.trim(), email: email.input.value.trim() }),
+    }).then(data => {
+      challengeId = data.challengeId
+      notify('验证码已发送', 'success')
+    }).catch(error => {
+      notify(error instanceof Error ? error.message : String(error), 'danger')
+    }).finally(() => { send.disabled = false })
+  })
+
+  const submit = create('button', 'identity-login__primary', '核验验证码')
+  submit.type = 'button'
+  submit.addEventListener('click', () => {
+    if (!challengeId) {
+      notify('请先获取验证码', 'warning')
+      return
+    }
+    submit.disabled = true
+    context.api.request('/shop/identity/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shopCode: shop.input.value.trim(), challengeId, code: code.input.value.trim() }),
+    }).then(() => {
+      notify('验证码正确。会话升级将在后续切片接入。', 'success')
+    }).catch(error => {
+      notify(error instanceof Error ? error.message : String(error), 'danger')
+    }).finally(() => { submit.disabled = false })
+  })
+
+  const back = create('button', 'identity-login__link', '返回个人中心')
+  back.type = 'button'
+  back.addEventListener('click', () => context.navigate('/profile'))
+  card.append(send, submit, back)
+  root.append(card)
+  container.replaceChildren(root)
+}
+
+function field(label: string, type: string, value: string, name: string): { wrap: HTMLElement; input: HTMLInputElement } {
+  const wrap = create('label', 'identity-login__field')
+  wrap.append(create('span', '', label))
+  const input = document.createElement('input')
+  input.type = type
+  input.name = name
+  input.value = value
+  input.autocomplete = 'off'
+  wrap.append(input)
+  return { wrap, input }
 }
 
 function renderProfile(container: HTMLElement, context: RemoteModuleContext): void {

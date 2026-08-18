@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/shop"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/shop/model"
@@ -104,6 +105,31 @@ func (r *Repository) GetManagedShop(ctx context.Context, merchantID, shopID int6
 	}
 	if err != nil {
 		return model.Shop{}, fmt.Errorf("identity shop get managed: %w", err)
+	}
+	return value, nil
+}
+
+func (r *Repository) GetShopByCode(ctx context.Context, code string) (model.Shop, error) {
+	return r.getRoutableShop(ctx, `code=?`, code)
+}
+
+func (r *Repository) GetShopBySubdomain(ctx context.Context, subdomain string) (model.Shop, error) {
+	if strings.TrimSpace(subdomain) == "" {
+		return model.Shop{}, model.ErrNotFound
+	}
+	return r.getRoutableShop(ctx, `subdomain=?`, subdomain)
+}
+
+func (r *Repository) getRoutableShop(ctx context.Context, where string, arg any) (model.Shop, error) {
+	if r == nil || r.database == nil {
+		return model.Shop{}, model.ErrUnavailable
+	}
+	value, err := scanShop(r.database.QueryRowContext(ctx, `SELECT `+shopSelect+` FROM identity_shop WHERE `+where+` AND status<>'CLOSED'`, arg))
+	if errors.Is(err, sql.ErrNoRows) {
+		return model.Shop{}, model.ErrNotFound
+	}
+	if err != nil {
+		return model.Shop{}, fmt.Errorf("identity shop get routable: %w", err)
 	}
 	return value, nil
 }

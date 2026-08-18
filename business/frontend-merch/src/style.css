@@ -35,8 +35,27 @@
 
 .identity-profile-form {
   display: grid;
-  gap: 12px;
+  gap: 16px;
   max-width: 720px;
+  padding: 16px;
+}
+
+.identity-profile-marketing {
+  display: grid;
+  gap: 8px;
+}
+
+.identity-profile-caption {
+  margin: 0;
+  color: var(--ls-ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.identity-profile-hint {
+  margin: 0;
+  color: var(--ls-muted);
+  font-size: 12px;
 }
 
 .identity-shop-settings-form {

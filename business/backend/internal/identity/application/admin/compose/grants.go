@@ -17,6 +17,19 @@ type Grants interface {
 	PutSMSRegions(context.Context, appmodel.PutMerchantSMSRegions) (appmodel.MerchantSMSRegions, error)
 	LiveProviders(context.Context, int64) (appmodel.MerchantLiveProviders, error)
 	PutLiveProviders(context.Context, appmodel.PutMerchantLiveProviders) (appmodel.MerchantLiveProviders, error)
+	EdgeSnapshot(context.Context) (EdgeSnapshot, error)
+}
+
+type EdgeSnapshot struct {
+	CNAMETarget    string   `json:"cnameTarget"`
+	RootDomain     string   `json:"rootDomain"`
+	ShopDomain     string   `json:"shopDomain"`
+	LiveDomain     string   `json:"liveDomain"`
+	RTSDomain      string   `json:"rtsDomain"`
+	AdminDomain    string   `json:"adminDomain"`
+	MerchantDomain string   `json:"merchantDomain"`
+	ForceHTTPS     bool     `json:"forceHttps"`
+	ReservedHosts  []string `json:"reservedHosts"`
 }
 
 type Unavailable struct{}
@@ -38,4 +51,7 @@ func (Unavailable) LiveProviders(context.Context, int64) (appmodel.MerchantLiveP
 }
 func (Unavailable) PutLiveProviders(context.Context, appmodel.PutMerchantLiveProviders) (appmodel.MerchantLiveProviders, error) {
 	return appmodel.MerchantLiveProviders{}, merchantmodel.ErrUnavailable
+}
+func (Unavailable) EdgeSnapshot(context.Context) (EdgeSnapshot, error) {
+	return EdgeSnapshot{}, merchantmodel.ErrUnavailable
 }

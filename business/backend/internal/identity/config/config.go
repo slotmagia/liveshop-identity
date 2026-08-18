@@ -24,9 +24,10 @@ type Config struct {
 }
 
 type Compose struct {
-	TradeOrigin     string `json:"trade_origin"`
-	PlatformOrigin  string `json:"platform_origin"`
-	InternalToken   string `json:"internal_token"`
+	TradeOrigin       string `json:"trade_origin"`
+	PlatformOrigin    string `json:"platform_origin"`
+	InternalToken     string `json:"internal_token"`
+	DomainCNAMETarget string `json:"domain_cname_target"`
 }
 
 type Log struct {

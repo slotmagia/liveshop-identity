@@ -58,7 +58,7 @@ func sampleProfileRecord() merchantmodel.Record {
 }
 
 func merchProfileLogic(record merchantmodel.Record) *Logic {
-	return New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, merchant.NewDirectory(&stubProfileRepo{record: record}), nil, nil)
+	return New(nil, nil, nil, nil, nil, nil, nil, nil, nil, Subscription{}, merchant.NewDirectory(&stubProfileRepo{record: record}), nil, nil, nil, nil, nil, nil, nil, nil)
 }
 
 func merchProfileOwnerContext() context.Context {
