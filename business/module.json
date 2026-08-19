@@ -4,7 +4,7 @@
   "metadata": {
     "id": "identity",
     "name": "Identity",
-    "version": "2.0.19"
+    "version": "2.0.22"
   },
   "spec": {
     "backend": {
@@ -5384,6 +5384,466 @@
                   ]
                 }
               ]
+            },
+            {
+              "id": "identity.shop.login.sms-regions.list",
+              "method": "GET",
+              "path": "/shop/identity/login/sms-regions",
+              "summary": "List shop login SMS regions",
+              "description": "Returns the enabled SMS dial codes for an active shop by shopCode. Identity reads Platform SMS grants; empty lists are valid when grants are unset.",
+              "authentication": "public",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "shopCode",
+                  "type": "string",
+                  "location": "query",
+                  "required": true,
+                  "description": "Active shop code"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "SMS regions",
+                  "fields": [
+                    {
+                      "name": "items",
+                      "type": "array",
+                      "description": "Dial code options"
+                    },
+                    {
+                      "name": "unrestricted",
+                      "type": "boolean",
+                      "description": "True when the shop is not limited to a grant list"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.addresses.list",
+              "method": "GET",
+              "path": "/shop/identity/addresses",
+              "summary": "List customer addresses",
+              "description": "Returns the signed-in customer's shop-scoped addresses. Default is unique per subject.",
+              "authentication": "guest-session",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Address book",
+                  "fields": [
+                    {
+                      "name": "items",
+                      "type": "array",
+                      "description": "Addresses including isDefault and version"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.addresses.create",
+              "method": "POST",
+              "path": "/shop/identity/addresses",
+              "summary": "Create a customer address",
+              "description": "Creates a shop-scoped address for the signed-in customer using a stable commandKey.",
+              "authentication": "guest-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "recipient",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Recipient name"
+                },
+                {
+                  "name": "phone",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Contact phone"
+                },
+                {
+                  "name": "detail",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Street-level address"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable create command key"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Created address",
+                  "fields": [
+                    {
+                      "name": "id",
+                      "type": "integer",
+                      "description": "Address ID"
+                    },
+                    {
+                      "name": "version",
+                      "type": "integer",
+                      "description": "Optimistic version"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.addresses.update",
+              "method": "PUT",
+              "path": "/shop/identity/addresses/{addressId}",
+              "summary": "Update a customer address",
+              "description": "Updates an owned address with expectedVersion protection.",
+              "authentication": "guest-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "addressId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Address ID"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current address version"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable update command key"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Updated address",
+                  "fields": [
+                    {
+                      "name": "id",
+                      "type": "integer",
+                      "description": "Address ID"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.addresses.delete",
+              "method": "DELETE",
+              "path": "/shop/identity/addresses/{addressId}",
+              "summary": "Delete a customer address",
+              "description": "Deletes an owned address with expectedVersion protection.",
+              "authentication": "guest-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "addressId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Address ID"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current address version"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable delete command key"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Deleted",
+                  "fields": [
+                    {
+                      "name": "ok",
+                      "type": "boolean",
+                      "description": "Always true on success"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.addresses.default.replace",
+              "method": "PUT",
+              "path": "/shop/identity/addresses/default",
+              "summary": "Replace the default customer address",
+              "description": "Makes one owned address the unique default for the current shop subject.",
+              "authentication": "guest-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "addressId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Address ID"
+                },
+                {
+                  "name": "expectedVersion",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Current address version"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable default-replace command key"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "New default address",
+                  "fields": [
+                    {
+                      "name": "isDefault",
+                      "type": "boolean",
+                      "description": "Always true on success"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.wishlist.list",
+              "method": "GET",
+              "path": "/shop/identity/wishlist",
+              "summary": "List wishlist items",
+              "description": "Returns product IDs the signed-in customer collected. Product summaries stay in Catalog.",
+              "authentication": "guest-session",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "cursor",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Last productId from the previous page"
+                },
+                {
+                  "name": "limit",
+                  "type": "integer",
+                  "location": "query",
+                  "required": false,
+                  "description": "Page size, default 20, max 100"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Wishlist relations",
+                  "fields": [
+                    {
+                      "name": "items",
+                      "type": "array",
+                      "description": "productId and createdAt"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.wishlist.items.create",
+              "method": "POST",
+              "path": "/shop/identity/wishlist/items",
+              "summary": "Add a wishlist item",
+              "description": "Records a Catalog product ID against the signed-in customer. Duplicate product IDs converge.",
+              "authentication": "guest-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "productId",
+                  "type": "integer",
+                  "location": "body",
+                  "required": true,
+                  "description": "Catalog product ID"
+                },
+                {
+                  "name": "commandKey",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Stable add command key"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Wishlist item",
+                  "fields": [
+                    {
+                      "name": "productId",
+                      "type": "integer",
+                      "description": "Catalog product ID"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.wishlist.items.delete",
+              "method": "DELETE",
+              "path": "/shop/identity/wishlist/items/{productId}",
+              "summary": "Remove a wishlist item",
+              "description": "Removes the Catalog product ID from the signed-in customer's wishlist.",
+              "authentication": "guest-session",
+              "idempotency": "idempotent",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "productId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Catalog product ID"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Removed",
+                  "fields": [
+                    {
+                      "name": "ok",
+                      "type": "boolean",
+                      "description": "Always true on success"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.profile.get",
+              "method": "GET",
+              "path": "/shop/identity/profile",
+              "summary": "Read the current shopper profile",
+              "description": "Returns the shop-scoped subject, principal type and signed-in flag. Order, coupon and wallet summaries stay on their owner modules.",
+              "authentication": "guest-session",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Profile",
+                  "fields": [
+                    {
+                      "name": "subject",
+                      "type": "string",
+                      "description": "Caller subject"
+                    },
+                    {
+                      "name": "signedIn",
+                      "type": "boolean",
+                      "description": "True when the caller is a CUSTOMER"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.aftersales.list",
+              "method": "GET",
+              "path": "/shop/identity/aftersales",
+              "summary": "List customer aftersales",
+              "description": "Returns the signed-in customer's shop-scoped aftersale tickets. Refund funds remain Trade-owned.",
+              "authentication": "guest-session",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "status",
+                  "type": "string",
+                  "location": "query",
+                  "required": false,
+                  "description": "Optional aftersale status"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Aftersale page",
+                  "fields": [
+                    {
+                      "name": "items",
+                      "type": "array",
+                      "description": "Customer aftersale tickets"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "identity.shop.aftersales.get",
+              "method": "GET",
+              "path": "/shop/identity/aftersales/{aftersaleId}",
+              "summary": "Get a customer aftersale",
+              "description": "Returns one aftersale owned by the signed-in customer. Other customers' tickets are not found.",
+              "authentication": "guest-session",
+              "idempotency": "safe",
+              "requiredPermissions": [],
+              "requestFields": [
+                {
+                  "name": "aftersaleId",
+                  "type": "integer",
+                  "location": "path",
+                  "required": true,
+                  "description": "Aftersale ID"
+                }
+              ],
+              "responses": [
+                {
+                  "status": 200,
+                  "description": "Aftersale",
+                  "fields": [
+                    {
+                      "name": "aftersale",
+                      "type": "object",
+                      "description": "Ticket progress, return status and refund amount"
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -5857,7 +6317,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5912,7 +6372,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -5957,7 +6417,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6002,7 +6462,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6046,7 +6506,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6089,7 +6549,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6135,7 +6595,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6180,7 +6640,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6213,7 +6673,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6246,7 +6706,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6280,7 +6740,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6314,7 +6774,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6348,7 +6808,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6382,7 +6842,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6420,7 +6880,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6472,7 +6932,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6522,7 +6982,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6566,7 +7026,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6619,7 +7079,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6671,7 +7131,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6728,7 +7188,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6772,7 +7232,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6831,7 +7291,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6883,7 +7343,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6916,7 +7376,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6968,7 +7428,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7014,7 +7474,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7057,7 +7517,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7110,7 +7570,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7156,7 +7616,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7208,7 +7668,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7260,7 +7720,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7304,7 +7764,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7356,7 +7816,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7409,7 +7869,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7461,7 +7921,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7494,7 +7954,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7547,7 +8007,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7559,7 +8019,7 @@
         }
       },
       {
-        "id": "identity.placeholder.shop.profile",
+        "id": "identity.shop.profile",
         "surface": "shop",
         "kind": "page",
         "route": "/profile",
@@ -7574,11 +8034,17 @@
           "groupSort": 500
         },
         "requiredPermissions": [],
-        "allowedRoutes": [],
+        "allowedRoutes": [
+          {
+            "methods": ["GET"],
+            "prefix": "/shop/identity/profile",
+            "requiredPermissions": []
+          }
+        ],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -7597,7 +8063,7 @@
         "route": "/login",
         "title": "买家登录",
         "icon": "log-in",
-        "description": "通过手机或邮箱请求登录验证码并由 Identity 核验挑战。游客升级为顾客会话不在本页。",
+        "description": "通过手机或邮箱请求登录验证码，核验后由 Host 走 /auth/login 升级当前游客会话。",
         "sort": 20,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -7616,6 +8082,7 @@
           },
           {
             "methods": [
+              "GET",
               "POST"
             ],
             "prefix": "/shop/identity/login",
@@ -7625,7 +8092,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -7638,13 +8105,13 @@
         }
       },
       {
-        "id": "identity.placeholder.shop.aftersales",
+        "id": "identity.shop.aftersales",
         "surface": "shop",
         "kind": "page",
         "route": "/aftersales",
         "title": "我的售后",
         "icon": "life-buoy",
-        "description": "我的售后菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "按申请类型和处理状态展示当前顾客的售后工单，退款资金状态由 Trade 提供摘要。",
         "sort": 110,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -7652,33 +8119,37 @@
           "groupIcon": "user",
           "groupSort": 500
         },
-        "requiredPermissions": [
-          "identity.placeholder.read"
+        "requiredPermissions": [],
+        "allowedRoutes": [
+          {
+            "methods": ["GET"],
+            "prefix": "/shop/identity/aftersales",
+            "requiredPermissions": []
+          }
         ],
-        "allowedRoutes": [],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "ShopAftersalesPage",
           "props": [],
           "events": [],
           "actions": []
         }
       },
       {
-        "id": "identity.placeholder.shop.aftersale-detail",
+        "id": "identity.shop.aftersale-detail",
         "surface": "shop",
         "kind": "page",
         "route": "/aftersales/detail",
         "title": "售后详情",
         "icon": "file-search",
-        "description": "查看售后处理进度、申请凭证、退货物流和退款摘要。",
+        "description": "展示售后状态机、处理记录、退货物流和退款摘要，不允许浏览器覆盖服务端终态。",
         "sort": 111,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -7686,14 +8157,18 @@
           "groupIcon": "user",
           "groupSort": 500
         },
-        "requiredPermissions": [
-          "identity.placeholder.read"
+        "requiredPermissions": [],
+        "allowedRoutes": [
+          {
+            "methods": ["GET"],
+            "prefix": "/shop/identity/aftersales",
+            "requiredPermissions": []
+          }
         ],
-        "allowedRoutes": [],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -7706,13 +8181,13 @@
         }
       },
       {
-        "id": "identity.placeholder.shop.address",
+        "id": "identity.shop.address",
         "surface": "shop",
         "kind": "page",
         "route": "/address",
         "title": "地址簿",
         "icon": "map-pin",
-        "description": "地址簿菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "管理当前顾客的收货地址、默认地址和结算选择。",
         "sort": 120,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -7720,33 +8195,37 @@
           "groupIcon": "user",
           "groupSort": 500
         },
-        "requiredPermissions": [
-          "identity.placeholder.read"
+        "requiredPermissions": [],
+        "allowedRoutes": [
+          {
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "prefix": "/shop/identity/addresses",
+            "requiredPermissions": []
+          }
         ],
-        "allowedRoutes": [],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "ShopAddressPage",
           "props": [],
           "events": [],
           "actions": []
         }
       },
       {
-        "id": "identity.placeholder.shop.address-edit",
+        "id": "identity.shop.address-edit",
         "surface": "shop",
         "kind": "page",
         "route": "/address/edit",
         "title": "编辑收货地址",
         "icon": "map-pinned",
-        "description": "新增或编辑联系人、电话、国家地区和详细收货地址。",
+        "description": "新增或编辑联系人、电话、国家地区和详细收货地址；写入使用稳定命令键和版本。",
         "sort": 121,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -7754,14 +8233,18 @@
           "groupIcon": "user",
           "groupSort": 500
         },
-        "requiredPermissions": [
-          "identity.placeholder.read"
+        "requiredPermissions": [],
+        "allowedRoutes": [
+          {
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "prefix": "/shop/identity/addresses",
+            "requiredPermissions": []
+          }
         ],
-        "allowedRoutes": [],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -7774,13 +8257,13 @@
         }
       },
       {
-        "id": "identity.placeholder.shop.favorites",
+        "id": "identity.shop.favorites",
         "surface": "shop",
         "kind": "page",
         "route": "/favorites",
         "title": "收藏",
         "icon": "heart",
-        "description": "收藏菜单占位。页面与业务事实归 identity 模块；领域契约、真实接口和数据源完成前不提供业务操作或模拟数据。",
+        "description": "展示顾客收藏的商品引用；商品标题与价格由 Catalog 商品详情页提供。",
         "sort": 140,
         "navigation": {
           "groupId": "legacy-shop-mine",
@@ -7788,20 +8271,24 @@
           "groupIcon": "user",
           "groupSort": 500
         },
-        "requiredPermissions": [
-          "identity.placeholder.read"
+        "requiredPermissions": [],
+        "allowedRoutes": [
+          {
+            "methods": ["GET", "POST", "DELETE"],
+            "prefix": "/shop/identity/wishlist",
+            "requiredPermissions": []
+          }
         ],
-        "allowedRoutes": [],
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.0.19",
+          "version": "2.0.22",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
         "frontend": {
-          "component": "PlaceholderPage",
+          "component": "ShopFavoritesPage",
           "props": [],
           "events": [],
           "actions": []

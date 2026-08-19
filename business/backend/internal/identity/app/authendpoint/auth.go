@@ -56,11 +56,12 @@ func Register(root *ghttp.RouterGroup, endpoint *Endpoint) {
 }
 
 type LoginReq struct {
-	g.Meta   `path:"/login" method:"post" tags:"Identity-auth" summary:"Authenticate a principal"`
-	Realm    string `json:"realm" v:"required"`
-	Username string `json:"username" v:"required"`
-	Password string `json:"password" v:"required"`
-	ShopCode string `json:"shopCode"`
+	g.Meta      `path:"/login" method:"post" tags:"Identity-auth" summary:"Authenticate a principal"`
+	Realm       string `json:"realm" v:"required"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+	ShopCode    string `json:"shopCode"`
+	ChallengeID string `json:"challengeId"`
 }
 type LoginRes struct {
 	AccessToken string    `json:"accessToken"`
@@ -121,21 +122,29 @@ func (e *Endpoint) Login(ctx context.Context, request *LoginReq) (*LoginRes, err
 	if !ok {
 		return nil, unauthorized()
 	}
-	if !realmMatchesSurface(realm, requestFrom(ctx).Header.Get("X-Liveshop-Surface")) {
+	requestContext := requestFrom(ctx)
+	if !realmMatchesSurface(realm, requestContext.Header.Get("X-Liveshop-Surface")) {
 		return nil, unauthorized()
 	}
 	refresh := secureToken()
 	refreshHash := sha256.Sum256([]byte(refresh))
 	now := time.Now()
-	result, err := e.auth.Login(ctx, biz.LoginCommand{Realm: realm, Username: request.Username, Password: request.Password,
-		ShopCode:  request.ShopCode,
-		SessionID: secureToken(), FamilyID: secureToken(), RefreshHash: refreshHash, ExpiresAt: now.Add(e.refreshTTL),
-		IPAddress: requestFrom(ctx).RemoteAddr, UserAgent: requestFrom(ctx).UserAgent()})
+	guestRefresh := ""
+	if realm == principal.RealmCustomer {
+		guestRefresh = requestContext.Cookie.Get(e.cookieName(realm)).String()
+	}
+	result, err := e.auth.Login(ctx, biz.LoginCommand{
+		Realm: realm, Username: strings.TrimSpace(request.Username), Password: request.Password,
+		ShopCode: strings.TrimSpace(request.ShopCode), ChallengeID: strings.ToLower(strings.TrimSpace(request.ChallengeID)),
+		GuestRefreshToken: guestRefresh,
+		SessionID:         secureToken(), FamilyID: secureToken(), RefreshHash: refreshHash, ExpiresAt: now.Add(e.refreshTTL),
+		IPAddress: requestContext.RemoteAddr, UserAgent: requestContext.UserAgent(),
+	})
 	if err != nil {
 		return nil, authFailure(err)
 	}
-	e.setRefreshCookie(requestFrom(ctx), realm, refresh, now.Add(e.refreshTTL))
-	return e.loginResponse(result, request.Username)
+	e.setRefreshCookie(requestContext, realm, refresh, now.Add(e.refreshTTL))
+	return e.loginResponse(result, strings.TrimSpace(request.Username))
 }
 
 func (e *Endpoint) Guest(ctx context.Context, request *GuestReq) (*GuestRes, error) {

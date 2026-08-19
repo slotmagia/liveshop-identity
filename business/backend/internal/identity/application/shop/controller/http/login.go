@@ -30,3 +30,15 @@ func (c *LoginController) Create(ctx context.Context, request *api.CreateReq) (*
 	}
 	return &api.CreateRes{ChallengeID: value.ChallengeID, Verified: value.Verified}, nil
 }
+
+func (c *LoginController) ListSMSRegions(ctx context.Context, request *api.ListSMSRegionsReq) (*api.ListSMSRegionsRes, error) {
+	value, err := c.service.LoginSMSRegions(ctx, request.ShopCode)
+	if err != nil {
+		return nil, web.Failure(err)
+	}
+	response := &api.ListSMSRegionsRes{Items: make([]api.SMSRegion, 0, len(value.Items)), Unrestricted: value.Unrestricted}
+	for _, item := range value.Items {
+		response.Items = append(response.Items, api.SMSRegion{DialCode: item.DialCode, Name: item.Name, ISO2: item.ISO2, Emoji: item.Emoji})
+	}
+	return response, nil
+}

@@ -497,6 +497,105 @@ func TestGuestSessionCommitsSubjectSessionRefreshAndOutboxAtomically(t *testing.
 	assertCounts(t, database, map[string]int{"identity_subject": 1, "identity_session": 1, "identity_refresh_token": 1, "identity_outbox": 2})
 }
 
+func TestVerifiedChallengeLoginUpgradesGuestAndRejectsReplay(t *testing.T) {
+	database := integrationDatabase(t)
+	for _, statement := range []string{
+		`INSERT INTO identity_merchant(merchant_id,name,status,version) VALUES(7,'Merchant Seven','ACTIVE',1)`,
+		`INSERT INTO identity_shop(shop_id,merchant_id,name,code,status,version) VALUES(13,7,'Guest Shop','guest-shop','ACTIVE',1)`,
+	} {
+		if _, err := database.Exec(statement); err != nil {
+			t.Fatal(err)
+		}
+	}
+	directory, err := NewDirectoryRepository(database)
+	if err != nil {
+		t.Fatal(err)
+	}
+	repository, err := NewAuthRepository(database, directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	insertConsumedChallenge(t, database, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "13800000000", "")
+	refreshHash := sha256.Sum256([]byte("guest-refresh"))
+	guest, err := repository.Guest(context.Background(), biz.GuestCommand{
+		Subject: "guest-upgrade", ShopCode: "guest-shop", SessionID: "guest-session", FamilyID: "guest-family",
+		RefreshHash: refreshHash, ExpiresAt: time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := repository.Login(context.Background(), biz.LoginCommand{
+		Realm: principal.RealmCustomer, ShopCode: "guest-shop",
+		ChallengeID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", GuestRefreshToken: "guest-refresh",
+		SessionID: "customer-session", FamilyID: "customer-family", RefreshHash: sha256.Sum256([]byte("customer-refresh")),
+		ExpiresAt: time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if session.Subject.ID != guest.Subject.ID || session.Subject.PrincipalType != principal.TypeCustomer {
+		t.Fatalf("expected in-place upgrade, got %#v", session.Subject)
+	}
+	var level, guestStatus, loginSession string
+	if err := database.QueryRow(`SELECT authentication_level FROM identity_session WHERE session_id='customer-session'`).Scan(&level); err != nil || level != "OTP" {
+		t.Fatalf("customer session level=%q err=%v", level, err)
+	}
+	if err := database.QueryRow(`SELECT status FROM identity_session WHERE session_id='guest-session'`).Scan(&guestStatus); err != nil || guestStatus != "REVOKED" {
+		t.Fatalf("guest session status=%q err=%v", guestStatus, err)
+	}
+	if err := database.QueryRow(`SELECT login_session_id FROM identity_auth_otp_challenge WHERE challenge_id='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'`).Scan(&loginSession); err != nil || loginSession != "customer-session" {
+		t.Fatalf("challenge binding=%q err=%v", loginSession, err)
+	}
+	if _, err := repository.Login(context.Background(), biz.LoginCommand{
+		Realm: principal.RealmCustomer, ShopCode: "guest-shop",
+		ChallengeID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		SessionID:   "replay-session", FamilyID: "replay-family", RefreshHash: sha256.Sum256([]byte("replay-refresh")),
+		ExpiresAt: time.Now().Add(time.Hour),
+	}); !errors.Is(err, biz.ErrInvalidCredentials) {
+		t.Fatalf("replay returned %v", err)
+	}
+
+	insertConsumedChallenge(t, database, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "13800000000", "")
+	secondGuest, err := repository.Guest(context.Background(), biz.GuestCommand{
+		Subject: "guest-second", ShopCode: "guest-shop", SessionID: "guest-session-2", FamilyID: "guest-family-2",
+		RefreshHash: sha256.Sum256([]byte("guest-refresh-2")), ExpiresAt: time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bound, err := repository.Login(context.Background(), biz.LoginCommand{
+		Realm: principal.RealmCustomer, ShopCode: "guest-shop",
+		ChallengeID: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", GuestRefreshToken: "guest-refresh-2",
+		SessionID: "customer-session-2", FamilyID: "customer-family-2", RefreshHash: sha256.Sum256([]byte("customer-refresh-2")),
+		ExpiresAt: time.Now().Add(time.Hour),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bound.Subject.ID != session.Subject.ID || bound.Subject.ID == secondGuest.Subject.ID {
+		t.Fatalf("expected bind to existing customer, got %#v", bound.Subject)
+	}
+	var secondType string
+	if err := database.QueryRow(`SELECT principal_type FROM identity_subject WHERE subject='guest-second'`).Scan(&secondType); err != nil || secondType != "GUEST" {
+		t.Fatalf("second guest type=%q err=%v", secondType, err)
+	}
+	var upgraded int
+	if err := database.QueryRow(`SELECT COUNT(*) FROM identity_outbox WHERE event_type='identity.guest.upgraded'`).Scan(&upgraded); err != nil || upgraded != 1 {
+		t.Fatalf("guest.upgraded count=%d err=%v", upgraded, err)
+	}
+}
+
+func insertConsumedChallenge(t *testing.T, database *sql.DB, challengeID, phone, email string) {
+	t.Helper()
+	_, err := database.Exec(`INSERT INTO identity_auth_otp_challenge
+(challenge_id,merchant_id,shop_id,shop_code,phone,email,code_hash,ttl_seconds,status,attempt_count,expires_at,created_at,consumed_at)
+VALUES (?,?,13,'guest-shop',?,?,'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',300,'CONSUMED',0,DATE_ADD(CURRENT_TIMESTAMP(3), INTERVAL 1 HOUR),CURRENT_TIMESTAMP(3),CURRENT_TIMESTAMP(3))`,
+		challengeID, 7, phone, email)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func integrationDatabase(t *testing.T) *sql.DB {
 	t.Helper()
 	rawDSN := os.Getenv(integrationDSNEnv)

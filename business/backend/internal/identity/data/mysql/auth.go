@@ -33,6 +33,9 @@ func NewAuthRepository(database *sql.DB, directory *DirectoryRepository) (*AuthR
 }
 
 func (r *AuthRepository) Login(ctx context.Context, command biz.LoginCommand) (biz.AuthenticatedSession, error) {
+	if command.ChallengeID != "" {
+		return r.loginWithVerifiedChallenge(ctx, command)
+	}
 	var subject, secretHash, subjectStatus, memberStatus string
 	var credentialShopID sql.NullInt64
 	var selected model.SelectedContext
@@ -97,6 +100,179 @@ VALUES (?, ?, ?, NULLIF(?,0), NULLIF(?,0), NULLIF(?,0), 1, ?, ?, ?, 'ACTIVE', ?)
 		return biz.AuthenticatedSession{}, err
 	}
 	return r.sessionResult(ctx, command.SessionID, subject, selected, 1)
+}
+
+func (r *AuthRepository) loginWithVerifiedChallenge(ctx context.Context, command biz.LoginCommand) (biz.AuthenticatedSession, error) {
+	var subject string
+	var selected model.SelectedContext
+	err := r.directory.transaction(ctx, func(tx *sql.Tx) error {
+		var shopCode, phone, email, status string
+		var consumedAt sql.NullTime
+		var boundSession sql.NullString
+		err := tx.QueryRowContext(ctx, `SELECT merchant_id,shop_id,shop_code,phone,email,status,consumed_at,login_session_id
+FROM identity_auth_otp_challenge WHERE challenge_id=? FOR UPDATE`, command.ChallengeID).
+			Scan(&selected.MerchantID, &selected.ShopID, &shopCode, &phone, &email, &status, &consumedAt, &boundSession)
+		if errors.Is(err, sql.ErrNoRows) {
+			return biz.ErrInvalidCredentials
+		}
+		if err != nil {
+			return err
+		}
+		if status != "CONSUMED" || boundSession.Valid || shopCode != command.ShopCode || !consumedAt.Valid {
+			return biz.ErrInvalidCredentials
+		}
+		if !consumedAt.Time.Add(300 * time.Second).After(time.Now()) {
+			return biz.ErrInvalidCredentials
+		}
+		kind, identifier := otpCredential(phone, email)
+		if kind == "" {
+			return biz.ErrInvalidCredentials
+		}
+		var existing, principalType, existingStatus string
+		err = tx.QueryRowContext(ctx, `SELECT c.subject,s.principal_type,s.status
+FROM identity_credential c JOIN identity_subject s ON s.subject=c.subject
+WHERE c.namespace_type='SHOP' AND c.merchant_id=? AND c.shop_id=? AND c.credential_kind=? AND c.normalized_identifier=? AND c.status='ACTIVE'
+FOR UPDATE`, selected.MerchantID, selected.ShopID, kind, identifier).
+			Scan(&existing, &principalType, &existingStatus)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		guestSubject, guestSession, guestSameShop, err := r.lockGuestForUpgrade(ctx, tx, command.GuestRefreshToken, selected)
+		if err != nil {
+			return err
+		}
+		switch {
+		case existing != "":
+			if principalType != "CUSTOMER" || existingStatus != "ACTIVE" {
+				return biz.ErrInvalidCredentials
+			}
+			subject = existing
+			if guestSession != "" {
+				if err := r.revokeSession(ctx, tx, guestSession, "LOGIN_UPGRADE"); err != nil {
+					return err
+				}
+			}
+			if guestSubject != "" && guestSubject != subject && guestSameShop {
+				if err := appendOutbox(ctx, tx, "subject", guestSubject, 1, "identity.guest.upgraded", map[string]any{
+					"fromSubject": guestSubject, "toSubject": subject,
+					"merchantId": selected.MerchantID, "shopId": selected.ShopID,
+				}); err != nil {
+					return err
+				}
+			}
+		case guestSubject != "" && guestSameShop:
+			subject = guestSubject
+			result, err := tx.ExecContext(ctx, `UPDATE identity_subject SET principal_type='CUSTOMER',display_name='顾客',version=version+1,updated_at=CURRENT_TIMESTAMP(3)
+WHERE subject=? AND principal_type='GUEST' AND status='ACTIVE'`, subject)
+			if err != nil {
+				return err
+			}
+			if affected, _ := result.RowsAffected(); affected != 1 {
+				return biz.ErrInvalidCredentials
+			}
+			if err := r.insertShopCredential(ctx, tx, subject, kind, identifier, selected); err != nil {
+				return err
+			}
+			if err := r.revokeSession(ctx, tx, guestSession, "LOGIN_UPGRADE"); err != nil {
+				return err
+			}
+			if err := appendOutbox(ctx, tx, "subject", subject, 2, "identity.subject.changed", map[string]any{"subject": subject, "principalType": "CUSTOMER", "status": "ACTIVE"}); err != nil {
+				return err
+			}
+		default:
+			subject = "customer-" + secureToken()
+			if _, err := tx.ExecContext(ctx, `INSERT INTO identity_subject
+(subject,realm,principal_type,display_name,status,version)
+VALUES (?,'CUSTOMER','CUSTOMER','顾客','ACTIVE',1)`, subject); err != nil {
+				return mapConflict(err)
+			}
+			if err := r.insertShopCredential(ctx, tx, subject, kind, identifier, selected); err != nil {
+				return err
+			}
+			if guestSession != "" {
+				if err := r.revokeSession(ctx, tx, guestSession, "LOGIN_UPGRADE"); err != nil {
+					return err
+				}
+			}
+			if err := appendOutbox(ctx, tx, "subject", subject, 1, "identity.subject.changed", map[string]any{"subject": subject, "principalType": "CUSTOMER", "status": "ACTIVE"}); err != nil {
+				return err
+			}
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO identity_session
+(session_id,session_family_id,subject,selected_merchant_id,selected_shop_id,
+ context_version,authentication_level,device_name,ip_address,user_agent,status,expires_at)
+VALUES (?,?,?,?,?,1,'OTP',?,?,?,'ACTIVE',?)`, command.SessionID, command.FamilyID, subject,
+			selected.MerchantID, selected.ShopID, command.DeviceName, command.IPAddress, command.UserAgent, command.ExpiresAt); err != nil {
+			return mapConflict(err)
+		}
+		if _, err := tx.ExecContext(ctx, `INSERT INTO identity_refresh_token (token_hash,session_id,status,expires_at) VALUES (?,?,'ACTIVE',?)`, command.RefreshHash[:], command.SessionID, command.ExpiresAt); err != nil {
+			return mapConflict(err)
+		}
+		bound, err := tx.ExecContext(ctx, `UPDATE identity_auth_otp_challenge SET login_session_id=? WHERE challenge_id=? AND status='CONSUMED' AND login_session_id IS NULL`, command.SessionID, command.ChallengeID)
+		if err != nil {
+			return err
+		}
+		if affected, _ := bound.RowsAffected(); affected != 1 {
+			return biz.ErrInvalidCredentials
+		}
+		return appendOutbox(ctx, tx, "session", command.SessionID, 1, "identity.session.changed", map[string]any{"sessionId": command.SessionID, "subject": subject, "status": "ACTIVE"})
+	})
+	if err != nil {
+		return biz.AuthenticatedSession{}, err
+	}
+	return r.sessionResult(ctx, command.SessionID, subject, selected, 1)
+}
+
+func otpCredential(phone, email string) (kind, identifier string) {
+	if phone != "" {
+		return "PHONE", phone
+	}
+	if email != "" {
+		return "EMAIL", email
+	}
+	return "", ""
+}
+
+func (r *AuthRepository) insertShopCredential(ctx context.Context, tx *sql.Tx, subject, kind, identifier string, selected model.SelectedContext) error {
+	_, err := tx.ExecContext(ctx, `INSERT INTO identity_credential
+(subject,namespace_type,merchant_id,shop_id,credential_kind,normalized_identifier,secret_hash,status,verified_at,version)
+VALUES (?,'SHOP',?,?,?,?,NULL,'ACTIVE',CURRENT_TIMESTAMP(3),1)`, subject, selected.MerchantID, selected.ShopID, kind, identifier)
+	return mapConflict(err)
+}
+
+func (r *AuthRepository) lockGuestForUpgrade(ctx context.Context, tx *sql.Tx, refreshToken string, selected model.SelectedContext) (subject, sessionID string, sameShop bool, err error) {
+	if refreshToken == "" {
+		return "", "", false, nil
+	}
+	hash := sha256.Sum256([]byte(refreshToken))
+	var principalType, status string
+	var merchantID, shopID int64
+	err = tx.QueryRowContext(ctx, `SELECT s.session_id,s.subject,su.principal_type,s.status,COALESCE(s.selected_merchant_id,0),COALESCE(s.selected_shop_id,0)
+FROM identity_refresh_token rt
+JOIN identity_session s ON s.session_id=rt.session_id
+JOIN identity_subject su ON su.subject=s.subject
+WHERE rt.token_hash=? AND rt.status='ACTIVE' AND su.realm='CUSTOMER' FOR UPDATE`, hash[:]).
+		Scan(&sessionID, &subject, &principalType, &status, &merchantID, &shopID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", "", false, nil
+	}
+	if err != nil {
+		return "", "", false, err
+	}
+	if principalType != "GUEST" || status != "ACTIVE" {
+		return "", "", false, nil
+	}
+	return subject, sessionID, merchantID == selected.MerchantID && shopID == selected.ShopID, nil
+}
+
+func (r *AuthRepository) revokeSession(ctx context.Context, tx *sql.Tx, sessionID, reason string) error {
+	if _, err := tx.ExecContext(ctx, `UPDATE identity_session SET status='REVOKED',revoked_at=CURRENT_TIMESTAMP(3),revoke_reason=? WHERE session_id=? AND status='ACTIVE'`, reason, sessionID); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE identity_refresh_token SET status='REVOKED' WHERE session_id=? AND status='ACTIVE'`, sessionID); err != nil {
+		return err
+	}
+	return appendOutbox(ctx, tx, "session", sessionID, 1, "identity.session.changed", map[string]any{"sessionId": sessionID, "status": "REVOKED", "reason": reason})
 }
 
 func (r *AuthRepository) Guest(ctx context.Context, command biz.GuestCommand) (biz.AuthenticatedSession, error) {

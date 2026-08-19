@@ -11,6 +11,7 @@ import (
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz/model"
 	authmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth/model"
+	customermodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer/model"
 	customerservicemodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service/model"
 	fulfillmentmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment/model"
 	merchantmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant/model"
@@ -135,6 +136,11 @@ var domainStatus = []struct {
 	{fulfillmentmodel.ErrShippingConflict, http.StatusConflict},
 	{fulfillmentmodel.ErrShippingIdempotency, http.StatusConflict},
 	{fulfillmentmodel.ErrShippingRestricted, http.StatusForbidden},
+	{customermodel.ErrUnavailable, http.StatusServiceUnavailable},
+	{customermodel.ErrNotFound, http.StatusNotFound},
+	{customermodel.ErrConflict, http.StatusConflict},
+	{customermodel.ErrIdempotency, http.StatusConflict},
+	{customermodel.ErrInvalid, http.StatusBadRequest},
 	{governancemodel.ErrUnavailable, http.StatusServiceUnavailable},
 	{governancemodel.ErrNotFound, http.StatusNotFound},
 	{governancemodel.ErrConflict, http.StatusConflict},

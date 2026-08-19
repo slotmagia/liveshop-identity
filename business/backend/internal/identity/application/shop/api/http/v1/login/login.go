@@ -26,3 +26,20 @@ type CreateRes struct {
 	ChallengeID string `json:"challengeId"`
 	Verified    bool   `json:"verified"`
 }
+
+type SMSRegion struct {
+	DialCode string `json:"dialCode"`
+	Name     string `json:"name"`
+	ISO2     string `json:"iso2"`
+	Emoji    string `json:"emoji"`
+}
+
+type ListSMSRegionsReq struct {
+	g.Meta   `path:"/login/sms-regions" method:"get" tags:"Identity-shop" summary:"List shop login SMS regions"`
+	ShopCode string `json:"shopCode" in:"query"`
+}
+
+type ListSMSRegionsRes struct {
+	Items        []SMSRegion `json:"items"`
+	Unrestricted bool        `json:"unrestricted"`
+}

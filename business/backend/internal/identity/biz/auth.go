@@ -36,17 +36,19 @@ type GuestCommand struct {
 }
 
 type LoginCommand struct {
-	Realm       principal.Realm
-	Username    string
-	Password    string
-	ShopCode    string
-	SessionID   string
-	FamilyID    string
-	RefreshHash [32]byte
-	ExpiresAt   time.Time
-	DeviceName  string
-	IPAddress   string
-	UserAgent   string
+	Realm             principal.Realm
+	Username          string
+	Password          string
+	ShopCode          string
+	ChallengeID       string
+	GuestRefreshToken string
+	SessionID         string
+	FamilyID          string
+	RefreshHash       [32]byte
+	ExpiresAt         time.Time
+	DeviceName        string
+	IPAddress         string
+	UserAgent         string
 }
 
 type AuthenticatedSession struct {
@@ -78,10 +80,32 @@ func (a *Authentication) Login(ctx context.Context, command LoginCommand) (Authe
 	if a.repository == nil || a.directory == nil {
 		return AuthenticatedSession{}, model.ErrUnavailable
 	}
-	if !command.Realm.Valid() || command.Username == "" || command.Password == "" || command.SessionID == "" || command.FamilyID == "" || command.ExpiresAt.IsZero() {
+	if !command.Realm.Valid() || command.SessionID == "" || command.FamilyID == "" || command.ExpiresAt.IsZero() {
 		return AuthenticatedSession{}, ErrInvalidCredentials
 	}
+	hasPassword := command.Username != "" && command.Password != ""
+	hasChallenge := command.ChallengeID != ""
+	if hasPassword == hasChallenge {
+		return AuthenticatedSession{}, ErrInvalidCredentials
+	}
+	if hasChallenge {
+		if command.Realm != principal.RealmCustomer || command.ShopCode == "" || command.Username != "" || command.Password != "" || !validChallengeID(command.ChallengeID) {
+			return AuthenticatedSession{}, ErrInvalidCredentials
+		}
+	}
 	return a.repository.Login(ctx, command)
+}
+
+func validChallengeID(id string) bool {
+	if len(id) != 64 {
+		return false
+	}
+	for _, r := range id {
+		if (r < '0' || r > '9') && (r < 'a' || r > 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 func (a *Authentication) Guest(ctx context.Context, command GuestCommand) (AuthenticatedSession, error) {

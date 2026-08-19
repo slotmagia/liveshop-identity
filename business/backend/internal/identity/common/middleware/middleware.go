@@ -10,6 +10,7 @@ import (
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/lvtuopen-ai/kernel-go/logctx"
 	"github.com/lvtuopen-ai/kernel-go/modulesession"
+	"github.com/lvtuopen-ai/kernel-go/principal"
 	"github.com/lvtuopen-ai/kernel-go/requestmeta"
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/common/authctx"
@@ -97,6 +98,28 @@ func RequireSurface(surface string) ghttp.HandlerFunc {
 		}
 		request.Middleware.Next()
 	}
+}
+
+// RequireShopperSession admits a guest or signed-in customer in the shop realm.
+func RequireShopperSession(request *ghttp.Request) {
+	claims := authctx.Caller(request.GetCtx())
+	if (claims.PrincipalType != principal.TypeGuest && claims.PrincipalType != principal.TypeCustomer) ||
+		claims.Realm != principal.RealmCustomer || claims.MerchantID <= 0 || claims.ShopID <= 0 {
+		deny(request, http.StatusForbidden, "customer or guest shop session is required", "shopper")
+		return
+	}
+	request.Middleware.Next()
+}
+
+// RequireCustomerSession admits only a signed-in customer in the shop realm.
+func RequireCustomerSession(request *ghttp.Request) {
+	claims := authctx.Caller(request.GetCtx())
+	if claims.PrincipalType != principal.TypeCustomer ||
+		claims.Realm != principal.RealmCustomer || claims.MerchantID <= 0 || claims.ShopID <= 0 {
+		deny(request, http.StatusForbidden, "customer shop session is required", "customer")
+		return
+	}
+	request.Middleware.Next()
 }
 
 // deny logs the decision before answering. An access denial the operator cannot

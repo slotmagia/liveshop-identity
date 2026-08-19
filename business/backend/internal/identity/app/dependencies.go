@@ -23,6 +23,7 @@ import (
 	admincompose "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/application/admin/compose"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/merchant"
@@ -33,6 +34,7 @@ import (
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/common/middleware"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/config"
 	authdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/auth"
+	customerdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/customer"
 	customerservicedata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/customer_service"
 	fulfillmentdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/fulfillment"
 	merchantdata "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/data/merchant"
@@ -73,6 +75,7 @@ type Dependencies struct {
 	Shipments          *fulfillment.Shipments
 	Shipping           *fulfillment.Shipping
 	OTP                *auth.OTP
+	Customer           *customer.Book
 	Notification       *notification.Client
 	MerchantGovernance *merchant_governance.Capabilities
 	Assignments        *subscription.Assignments
@@ -248,6 +251,7 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 		Shipments:          shipments,
 		Shipping:           shipping,
 		OTP:                auth.NewOTP(authdata.NewRepository(database), notifyClient),
+		Customer:           customer.NewBook(customerdata.NewRepository(database)),
 		Notification:       notifyClient,
 		MerchantGovernance: merchantGovernance,
 		Assignments:        assignments,

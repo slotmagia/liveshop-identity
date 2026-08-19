@@ -27,6 +27,29 @@ func (*authRepositoryStub) SwitchContext(context.Context, SwitchContextCommand) 
 	return AuthenticatedSession{}, nil
 }
 
+func TestLoginRequiresPasswordOrVerifiedChallenge(t *testing.T) {
+	authentication := NewAuthentication(&authRepositoryStub{}, &Directory{})
+	base := LoginCommand{Realm: principal.RealmCustomer, ShopCode: "shop-one", SessionID: "session-1", FamilyID: "family-1", ExpiresAt: time.Now().Add(time.Hour)}
+	if _, err := authentication.Login(context.Background(), base); err != ErrInvalidCredentials {
+		t.Fatalf("empty login returned %v", err)
+	}
+	password := base
+	password.Username, password.Password = "customer", "password1"
+	if _, err := authentication.Login(context.Background(), password); err != nil {
+		t.Fatal(err)
+	}
+	challenge := base
+	challenge.ChallengeID = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+	if _, err := authentication.Login(context.Background(), challenge); err != nil {
+		t.Fatal(err)
+	}
+	mixed := challenge
+	mixed.Username, mixed.Password = "customer", "password1"
+	if _, err := authentication.Login(context.Background(), mixed); err != ErrInvalidCredentials {
+		t.Fatalf("mixed login returned %v", err)
+	}
+}
+
 func TestGuestRequiresStableIdentifiersAndShop(t *testing.T) {
 	repository := &authRepositoryStub{}
 	authentication := NewAuthentication(repository, &Directory{})

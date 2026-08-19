@@ -32,12 +32,27 @@
 .identity-login__card h1 { margin: 0; font-size: 28px; font-weight: 900; }
 .identity-login__copy { margin: 0; color: var(--ls-shop-muted); font-size: 14px; line-height: 1.4; }
 .identity-login__field { display: flex; flex-direction: column; gap: 6px; color: var(--ls-shop-ink); font-size: 13px; font-weight: 700; }
-.identity-login__field input { height: 44px; padding: 0 12px; border: 1px solid var(--ls-shop-card-line); border-radius: 12px; color: var(--ls-shop-ink); background: var(--ls-surface); font: inherit; font-weight: 500; }
+.identity-login__field select { height: 44px; padding: 0 12px; border: 1px solid var(--ls-shop-card-line); border-radius: 12px; color: var(--ls-shop-ink); background: var(--ls-surface); font: inherit; font-weight: 500; }
 .identity-login__primary, .identity-login__secondary { height: 48px; border: 0; border-radius: 14px; font: inherit; font-size: 15px; font-weight: 900; cursor: pointer; }
 .identity-login__primary { color: var(--ls-shop-ink); background: var(--ls-shop-gold); }
 .identity-login__secondary { color: var(--ls-shop-ink); background: var(--ls-shop-search); }
 .identity-login__link { border: 0; background: transparent; color: var(--ls-shop-accent); font: inherit; font-weight: 700; cursor: pointer; }
 .identity-login__primary:disabled, .identity-login__secondary:disabled { opacity: .6; cursor: default; }
+.identity-address { min-height: 100vh; color: var(--ls-shop-ink); background: var(--ls-shop-page); }
+.identity-address__layout { width: min(720px, 100%); margin: 0 auto; padding: 24px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+.identity-address__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.identity-address__heading h1, .identity-address__layout > h1 { margin: 0; font-size: 22px; font-weight: 900; }
+.identity-address__list { display: grid; gap: 12px; }
+.identity-address__card { padding: 16px; border-radius: 16px; background: var(--ls-surface); box-shadow: var(--ls-shop-card-shadow); }
+.identity-address__card.is-default { outline: 2px solid var(--ls-shop-gold); }
+.identity-address__who { display: flex; align-items: center; gap: 10px; }
+.identity-address__who b { font-size: 16px; }
+.identity-address__who em { color: var(--ls-shop-gold); font-style: normal; font-size: 12px; font-weight: 900; }
+.identity-address__card p { margin: 10px 0 0; color: var(--ls-shop-muted); font-size: 14px; line-height: 1.4; }
+.identity-address__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.identity-address__actions button { height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--ls-shop-search); font: inherit; font-weight: 700; cursor: pointer; }
+.identity-address__form { display: flex; flex-direction: column; gap: 12px; }
+.identity-address__check { display: flex; align-items: center; gap: 8px; font-weight: 700; }
 @media (max-width: 1023px) {
   .identity-profile__layout { width: min(560px, 100%); padding: 16px; }
 }

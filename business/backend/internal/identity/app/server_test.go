@@ -30,6 +30,8 @@ import (
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth"
 	authmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/auth/model"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer"
+	customermodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service"
 	customerservicemodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/customer_service/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/fulfillment"
@@ -416,12 +418,20 @@ func stubOpenComplaint() fulfillmentmodel.Complaint {
 
 type stubAftersales struct{}
 
-func (stubAftersales) ListAftersales(context.Context, fulfillmentmodel.AftersaleQuery) (fulfillmentmodel.AftersalePage, error) {
-	return fulfillmentmodel.AftersalePage{Page: 1, PageSize: 20, Total: 1, Items: []fulfillmentmodel.Aftersale{stubPendingAftersale()}}, nil
+func (stubAftersales) ListAftersales(_ context.Context, query fulfillmentmodel.AftersaleQuery) (fulfillmentmodel.AftersalePage, error) {
+	item := stubPendingAftersale()
+	item.MerchantID = query.MerchantID
+	item.ShopID = query.ShopID
+	if query.CustomerSubject != "" {
+		item.CustomerSubject = query.CustomerSubject
+	}
+	return fulfillmentmodel.AftersalePage{Page: query.Page, PageSize: query.PageSize, Total: 1, Items: []fulfillmentmodel.Aftersale{item}}, nil
 }
-func (stubAftersales) GetAftersale(_ context.Context, _, _, aftersaleID int64) (fulfillmentmodel.Aftersale, error) {
+func (stubAftersales) GetAftersale(_ context.Context, merchantID, shopID, aftersaleID int64) (fulfillmentmodel.Aftersale, error) {
 	item := stubPendingAftersale()
 	item.ID = aftersaleID
+	item.MerchantID = merchantID
+	item.ShopID = shopID
 	return item, nil
 }
 func (stubAftersales) ReviewAftersale(_ context.Context, command fulfillmentmodel.ReviewAftersaleCommand) (fulfillmentmodel.Aftersale, bool, error) {
@@ -758,6 +768,62 @@ func TestShopLoginOTPIsPublicOnShopSurface(t *testing.T) {
 	}
 	if status, got := callJSON(t, http.MethodPost, login, "admin", "", `{"shopCode":"local-shop","challengeId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","code":"123456"}`); status != http.StatusForbidden {
 		t.Fatalf("login wrong surface status=%d body=%s", status, got)
+	}
+	regions := base + "/shop/identity/login/sms-regions?shopCode=local-shop"
+	if status, got := call(t, regions, "shop", ""); status != http.StatusOK {
+		t.Fatalf("sms regions status=%d body=%s", status, got)
+	}
+	if status, got := call(t, regions, "admin", ""); status != http.StatusForbidden {
+		t.Fatalf("sms regions wrong surface status=%d body=%s", status, got)
+	}
+}
+
+func TestShopAddressesAndWishlistRequireCustomerSession(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	addresses := base + "/shop/identity/addresses"
+	wishlist := base + "/shop/identity/wishlist"
+
+	if status, body := call(t, addresses, "shop", ""); status != http.StatusUnauthorized {
+		t.Fatalf("missing session status=%d body=%s", status, body)
+	}
+	guest := signShopper(t, issuer, principal.TypeGuest, "/shop/identity/addresses")
+	if status, body := call(t, addresses, "shop", guest); status != http.StatusForbidden {
+		t.Fatalf("guest address status=%d body=%s", status, body)
+	}
+	customerToken := signShopper(t, issuer, principal.TypeCustomer, "/shop/identity/addresses")
+	if status, body := call(t, addresses, "shop", customerToken); status != http.StatusOK {
+		t.Fatalf("customer address status=%d body=%s", status, body)
+	}
+	guestWish := signShopper(t, issuer, principal.TypeGuest, "/shop/identity/wishlist")
+	if status, body := call(t, wishlist, "shop", guestWish); status != http.StatusForbidden {
+		t.Fatalf("guest wishlist status=%d body=%s", status, body)
+	}
+	customerWish := signShopper(t, issuer, principal.TypeCustomer, "/shop/identity/wishlist")
+	if status, body := call(t, wishlist, "shop", customerWish); status != http.StatusOK {
+		t.Fatalf("customer wishlist status=%d body=%s", status, body)
+	}
+	profile := base + "/shop/identity/profile"
+	guestProfile := signShopper(t, issuer, principal.TypeGuest, "/shop/identity/profile")
+	if status, body := call(t, profile, "shop", guestProfile); status != http.StatusOK || !strings.Contains(body, `"signedIn":false`) {
+		t.Fatalf("guest profile status=%d body=%s", status, body)
+	}
+	customerProfile := signShopper(t, issuer, principal.TypeCustomer, "/shop/identity/profile")
+	if status, body := call(t, profile, "shop", customerProfile); status != http.StatusOK || !strings.Contains(body, `"signedIn":true`) {
+		t.Fatalf("customer profile status=%d body=%s", status, body)
+	}
+	aftersales := base + "/shop/identity/aftersales"
+	guestAftersales := signShopper(t, issuer, principal.TypeGuest, "/shop/identity/aftersales")
+	if status, body := call(t, aftersales, "shop", guestAftersales); status != http.StatusForbidden {
+		t.Fatalf("guest aftersales status=%d body=%s", status, body)
+	}
+	customerAftersales := signShopper(t, issuer, principal.TypeCustomer, "/shop/identity/aftersales")
+	if status, body := call(t, aftersales, "shop", customerAftersales); status != http.StatusOK {
+		t.Fatalf("customer aftersales status=%d body=%s", status, body)
+	}
+	detail := base + "/shop/identity/aftersales/21"
+	if status, body := call(t, detail, "shop", customerAftersales); status != http.StatusNotFound {
+		t.Fatalf("foreign aftersale status=%d body=%s", status, body)
 	}
 }
 
@@ -1553,6 +1619,30 @@ func (stubOTPNotifier) Dispatch(context.Context, auth.Dispatch) ([]authmodel.Del
 	return []authmodel.Delivery{{Channel: "SMS", Status: authmodel.StatusSent}}, nil
 }
 
+type stubCustomer struct{}
+
+func (stubCustomer) ListAddresses(context.Context, customermodel.Tenant, string) ([]customermodel.Address, error) {
+	return []customermodel.Address{}, nil
+}
+func (stubCustomer) SaveAddress(_ context.Context, command customermodel.SaveAddressCommand) (customermodel.Address, bool, error) {
+	return customermodel.Address{ID: 1, Recipient: command.Address.Recipient, Phone: command.Address.Phone, Detail: command.Address.Detail, Version: 1}, false, nil
+}
+func (stubCustomer) DeleteAddress(context.Context, customermodel.DeleteAddressCommand) (bool, error) {
+	return false, nil
+}
+func (stubCustomer) ReplaceDefault(_ context.Context, command customermodel.ReplaceDefaultCommand) (customermodel.Address, bool, error) {
+	return customermodel.Address{ID: command.AddressID, Version: command.ExpectedVersion + 1, IsDefault: true}, false, nil
+}
+func (stubCustomer) ListWishlist(context.Context, customermodel.Tenant, string, int64, int) ([]customermodel.WishlistItem, error) {
+	return []customermodel.WishlistItem{}, nil
+}
+func (stubCustomer) AddWishlist(_ context.Context, command customermodel.AddWishlistCommand) (customermodel.WishlistItem, bool, error) {
+	return customermodel.WishlistItem{ProductID: command.ProductID, CreatedAt: 1}, false, nil
+}
+func (stubCustomer) RemoveWishlist(context.Context, customermodel.RemoveWishlistCommand) error {
+	return nil
+}
+
 // startServer assembles the process the way main does, minus the database, and
 // returns its base URL.
 func startServer(t *testing.T, keys map[string]string) string {
@@ -1584,6 +1674,7 @@ func startServerWithUsers(t *testing.T, keys map[string]string, users stubUsers)
 		Shipments:          fulfillment.NewShipments(stubShipments{}),
 		Shipping:           fulfillment.NewShipping(stubShipping{}),
 		OTP:                auth.NewOTP(stubOTPRepository{}, stubOTPNotifier{}),
+		Customer:           customer.NewBook(stubCustomer{}),
 		MerchantGovernance: merchant_governance.NewCapabilities(stubMerchantGovernance{}),
 		Assignments:        subscription.NewAssignments(stubAssignments{}),
 		Orders:             subscription.NewOrders(stubOrders{}),
@@ -1630,6 +1721,21 @@ func testKeys(t *testing.T) (*modulesession.Issuer, map[string]string) {
 // sign mints the session the Gateway would issue for one contribution.
 func sign(t *testing.T, issuer *modulesession.Issuer, surface, prefix string, permissions ...string) string {
 	return signSession(t, issuer, surface, prefix, 1, 0, permissions...)
+}
+
+func signShopper(t *testing.T, issuer *modulesession.Issuer, principalType principal.Type, prefix string) string {
+	t.Helper()
+	token, err := issuer.Sign(modulesession.Claims{
+		Subject: "shopper", PrincipalType: principalType, Realm: principal.RealmCustomer, SessionID: "test-session",
+		ModuleID: middleware.ModuleID, ModuleVersion: "0.1.0", Surface: "shop", ContributionID: "test-contribution",
+		MerchantID: 1, ShopID: 1, IdentityVersion: 1, ContextVersion: 1, RegistryRevision: 1,
+		AuthorizationRevision: 1, EntitlementRevision: 1,
+		AllowedRoutes: []modulesession.RouteScope{{Methods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete}, Prefix: prefix}},
+	}, time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return token
 }
 
 func signMerchShop(t *testing.T, issuer *modulesession.Issuer, prefix string, merchantID, shopID int64, permissions ...string) string {

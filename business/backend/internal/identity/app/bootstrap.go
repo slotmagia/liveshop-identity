@@ -49,7 +49,8 @@ func NewServer(dependencies *Dependencies) *server.Server {
 			Name: shoprouter.Surface,
 			Register: func(root *ghttp.RouterGroup) {
 				shoprouter.RegisterHTTP(root, shoprouter.Deps{
-					Application: shoplogic.New(dependencies.Health, dependencies.OTP),
+					Application:    shoplogic.New(dependencies.Health, dependencies.OTP, dependencies.Customer, dependencies.Shops, dependencies.Aftersales, dependencies.Grants),
+					ModuleSessions: dependencies.ModuleSessions,
 				})
 			},
 		},
