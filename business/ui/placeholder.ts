@@ -1,4 +1,4 @@
-import { badge, dataCard, definitionList, page } from '@liveshop/design-tokens'
+import { badge, dataCard, definitionList, page } from '@liveshops/design-tokens'
 
 export interface PlaceholderContext {
   moduleId: string

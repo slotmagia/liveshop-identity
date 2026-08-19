@@ -4,7 +4,7 @@
   "metadata": {
     "id": "identity",
     "name": "Identity",
-    "version": "2.1.0"
+    "version": "2.1.2"
   },
   "spec": {
     "backend": {
@@ -5335,7 +5335,7 @@
               "method": "POST",
               "path": "/shop/identity/login/otp",
               "summary": "Create a shop login OTP challenge",
-              "description": "Commits a login verification challenge for an active shop, then SYNC-dispatches identity.auth.otp.requested. Identity owns the challenge; Platform only delivers template variables.",
+              "description": "Commits a login verification challenge for an active shop, then SYNC-dispatches identity.auth.otp.requested on the requested SMS or EMAIL channel. Identity owns the challenge, the code lifetime, and the next-send wait; Platform only delivers template variables. Same shop and destination cannot create another challenge during the resend interval.",
               "authentication": "public",
               "idempotency": "non-idempotent",
               "requiredPermissions": [],
@@ -5357,18 +5357,25 @@
                   "description": "Active shop code"
                 },
                 {
+                  "name": "channel",
+                  "type": "string",
+                  "location": "body",
+                  "required": true,
+                  "description": "Declared notification channel: SMS or EMAIL"
+                },
+                {
                   "name": "phone",
                   "type": "string",
                   "location": "body",
                   "required": false,
-                  "description": "Destination mobile number"
+                  "description": "Destination mobile number; required when channel is SMS"
                 },
                 {
                   "name": "email",
                   "type": "string",
                   "location": "body",
                   "required": false,
-                  "description": "Destination email"
+                  "description": "Destination email; required when channel is EMAIL"
                 }
               ],
               "responses": [
@@ -5384,12 +5391,22 @@
                     {
                       "name": "ttlSeconds",
                       "type": "integer",
-                      "description": "Challenge lifetime"
+                      "description": "Code lifetime in seconds; not the resend wait"
                     },
                     {
                       "name": "expiresAt",
                       "type": "string",
                       "description": "Challenge expiry"
+                    },
+                    {
+                      "name": "resendAfterSeconds",
+                      "type": "integer",
+                      "description": "Seconds until another send is allowed"
+                    },
+                    {
+                      "name": "nextSendAt",
+                      "type": "string",
+                      "description": "Earliest time another send is allowed"
                     }
                   ]
                 }
@@ -6392,7 +6409,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6447,7 +6464,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6492,7 +6509,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6537,7 +6554,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6581,7 +6598,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6624,7 +6641,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6670,7 +6687,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6715,7 +6732,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15190",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6748,7 +6765,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-admin",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15201",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -6781,7 +6798,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6815,7 +6832,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6849,7 +6866,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6883,7 +6900,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6917,7 +6934,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-live",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15193/identity-live.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -6955,7 +6972,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7007,7 +7024,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7057,7 +7074,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7101,7 +7118,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7154,7 +7171,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7206,7 +7223,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7263,7 +7280,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7307,7 +7324,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7366,7 +7383,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7418,7 +7435,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7451,7 +7468,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7503,7 +7520,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7549,7 +7566,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7592,7 +7609,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7645,7 +7662,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7691,7 +7708,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7743,7 +7760,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7795,7 +7812,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7839,7 +7856,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7891,7 +7908,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7944,7 +7961,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -7996,7 +8013,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -8048,7 +8065,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -8101,7 +8118,7 @@
         "artifact": {
           "type": "iframe",
           "name": "@liveshop/identity-merch",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15202",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         },
@@ -8138,7 +8155,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -8186,7 +8203,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -8224,7 +8241,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -8262,7 +8279,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -8300,7 +8317,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -8338,7 +8355,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
@@ -8376,7 +8393,7 @@
         "artifact": {
           "type": "remote-esm",
           "name": "@liveshop/identity-shop",
-          "version": "2.1.0",
+          "version": "2.1.2",
           "entry": "http://127.0.0.1:15203/identity-shop.js",
           "exportName": "default",
           "integrity": "sha256:0000000000000000000000000000000000000000000000000000000000000000"

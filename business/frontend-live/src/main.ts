@@ -1,4 +1,4 @@
-import type { RemoteModule, RemoteModuleContext } from '@liveshop/host-sdk'
+import type { RemoteModule, RemoteModuleContext } from '@liveshops/host-sdk'
 import { renderPlaceholder } from '../../ui/placeholder'
 import styles from './style.css?inline'
 

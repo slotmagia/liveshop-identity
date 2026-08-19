@@ -1,7 +1,8 @@
-import type { RemoteModule, RemoteModuleContext } from '@liveshop/host-sdk'
+import type { RemoteModule, RemoteModuleContext } from '@liveshops/host-sdk'
 import { renderPlaceholder } from '../../ui/placeholder'
 import { renderAddressBook, renderAddressEdit, renderFavorites } from './pages/customer'
 import { renderAftersaleDetail, renderAftersales } from './pages/aftersales'
+import { renderLogin } from './pages/login'
 import { renderIdentityScaffold } from './scaffold'
 import styles from './style.css?inline'
 
@@ -29,6 +30,10 @@ const contribution: RemoteModule = {
     }
     if (context.contributionId === 'identity.shop.aftersale-detail') {
       void renderAftersaleDetail(root, context)
+      return
+    }
+    if (context.contributionId === 'identity.shop.login') {
+      void renderLogin(root, context)
       return
     }
     if (context.contributionId.includes('.shop.')) renderIdentityScaffold(root, context)

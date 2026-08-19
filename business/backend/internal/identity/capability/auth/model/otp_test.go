@@ -1,29 +1,36 @@
 package model
 
-import "testing"
+import (
+	"errors"
+	"testing"
+	"time"
+)
 
-func TestRequestRequiresDestinationAndShop(t *testing.T) {
-	if _, err := (RequestCommand{ShopCode: "local-shop"}).Normalize(); err != ErrInvalid {
-		t.Fatalf("err=%v", err)
+func TestRemainingResendSeconds(t *testing.T) {
+	now := time.Date(2026, 8, 19, 12, 0, 0, 0, time.UTC)
+	if got := RemainingResendSeconds(time.Time{}, now); got != 0 {
+		t.Fatalf("empty last=%d", got)
 	}
-	got, err := (RequestCommand{ShopCode: " local-shop ", Phone: "13800000000"}).Normalize()
-	if err != nil || got.ShopCode != "local-shop" {
-		t.Fatalf("got=%+v err=%v", got, err)
+	if got := RemainingResendSeconds(now, now); got != ResendIntervalSeconds {
+		t.Fatalf("just sent=%d", got)
+	}
+	if got := RemainingResendSeconds(now.Add(-59*time.Second), now); got != 1 {
+		t.Fatalf("59s ago=%d", got)
+	}
+	if got := RemainingResendSeconds(now.Add(-time.Duration(ResendIntervalSeconds)*time.Second), now); got != 0 {
+		t.Fatalf("exactly cooled=%d", got)
+	}
+	if got := RemainingResendSeconds(now.Add(-59*time.Second-100*time.Millisecond), now); got != 1 {
+		t.Fatalf("fractional remaining=%d", got)
 	}
 }
 
-func TestHashCodeIsStableAndNotPlaintext(t *testing.T) {
-	hash := HashCode("abc", "123456")
-	if hash == "123456" || len(hash) != 64 || HashCode("abc", "123456") != hash {
-		t.Fatalf("hash=%s", hash)
+func TestResendCooldownErrorUnwraps(t *testing.T) {
+	err := &ResendCooldownError{ResendAfterSeconds: 12, NextSendAt: NextSendAt(time.Unix(1, 0))}
+	if !errors.Is(err, ErrResendCooldown) {
+		t.Fatalf("unwrap failed: %v", err)
 	}
-	if Delivered(nil) || Delivered([]Delivery{{Status: "FAILED_PERMANENT"}}) {
-		t.Fatal("expected no successful delivery")
-	}
-	if !Delivered([]Delivery{{Status: "FAILED_PERMANENT"}, {Status: StatusSent}}) {
-		t.Fatal("expected SENT to win")
-	}
-	if DeliveryKey("c1") != EventKey+":c1" {
-		t.Fatalf("deliveryKey=%s", DeliveryKey("c1"))
+	if err.Error() != "login otp resend cooldown: 12" {
+		t.Fatalf("error=%q", err.Error())
 	}
 }

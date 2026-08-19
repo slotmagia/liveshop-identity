@@ -51,11 +51,17 @@ func (l *Logic) CreateLoginOTP(ctx context.Context, input appmodel.CreateLoginOT
 	if l.otp == nil {
 		return appmodel.LoginOTP{}, authmodel.ErrUnavailable
 	}
-	challenge, err := l.otp.Request(ctx, authmodel.RequestCommand{ShopCode: input.ShopCode, Phone: input.Phone, Email: input.Email})
+	challenge, err := l.otp.Request(ctx, authmodel.RequestCommand{ShopCode: input.ShopCode, Channel: input.Channel, Phone: input.Phone, Email: input.Email})
 	if err != nil {
 		return appmodel.LoginOTP{}, err
 	}
-	return appmodel.LoginOTP{ChallengeID: challenge.ID, TTLSeconds: challenge.TTLSeconds, ExpiresAt: challenge.ExpiresAt.UTC().Format(time.RFC3339Nano)}, nil
+	return appmodel.LoginOTP{
+		ChallengeID:        challenge.ID,
+		TTLSeconds:         challenge.TTLSeconds,
+		ExpiresAt:          challenge.ExpiresAt.UTC().Format(time.RFC3339Nano),
+		ResendAfterSeconds: challenge.ResendAfterSeconds,
+		NextSendAt:         challenge.NextSendAt.UTC().Format(time.RFC3339Nano),
+	}, nil
 }
 
 func (l *Logic) CreateLogin(ctx context.Context, input appmodel.CreateLogin) (appmodel.Login, error) {

@@ -5,11 +5,11 @@
 ## 不可违反
 
 - **凭证只来自 Host。** iframe 走 `connectToHost()` 握手，remote-esm 走 `mount(container, context)` 的入参。禁止从 `localStorage`、cookie 或 URL 读 token——那些渠道无法证明是哪个 Host 在请求。
-- **不要自己拼 Gateway 地址或加 Authorization 头。** 用 `@liveshop/host-sdk` 的客户端，它负责注入 token 和 `X-Liveshop-Surface`。
+- **不要自己拼 Gateway 地址或加 Authorization 头。** 用 `@liveshops/host-sdk` 的客户端，它负责注入 token 和 `X-Liveshop-Surface`。
 - **请求路径必须在 `module.json` 的 `allowedRoutes` 里。** session 的路由范围由 contribution 决定，漏登记的路径线上会 403，本地却可能因为权限宽松而看不出来。
 - **产物类型不能改。** `admin` Host 只会以 iframe 方式加载；改了 `vite.config.ts` 的构建形态就加载不了。
-- **界面只能来自共享组件库。** 用 `@liveshop/design-tokens` 的组件工厂构建 DOM（后台是包根导出，商城和直播是 `/storefront` 子路径）；本目录只写本领域特有的布局，禁止重新定义按钮、表单、卡片、表格、价格、状态或弹窗的视觉——两个后台当初就是这样各自漂移开的。
-- **不要写死颜色和字号**，用 `@liveshop/design-tokens` 的变量；也不要写 `var(--ls-x, #fallback)`，令牌缺失必须直接暴露，而不是悄悄退回第二套配色。
+- **界面只能来自共享组件库。** 用 `@liveshops/design-tokens` 的组件工厂构建 DOM（后台是包根导出，商城和直播是 `/storefront` 子路径）；本目录只写本领域特有的布局，禁止重新定义按钮、表单、卡片、表格、价格、状态或弹窗的视觉——两个后台当初就是这样各自漂移开的。
+- **不要写死颜色和字号**，用 `@liveshops/design-tokens` 的变量；也不要写 `var(--ls-x, #fallback)`，令牌缺失必须直接暴露，而不是悄悄退回第二套配色。
 - **不要为静态结构拼 `innerHTML`。** 组件工厂一律用 `textContent` 写值，服务端字符串因此不可能进入 HTML 解析器。
 - **不要跨 surface 复用页面模块。** 每个 surface 的权限、布局和 Host 能力都不同，共用会让权限边界变模糊。
 
@@ -25,7 +25,7 @@ npm run dev     # 127.0.0.1:15190
 npm run build   # tsc --noEmit + vite build
 ```
 
-`@liveshop/host-sdk` 与 `@liveshop/design-tokens` 通过相对 `file:` 依赖引用 `liveshop-platform`，因此**本仓库必须与 `liveshop-platform` 同级**。发布构建需要这两个包已发布到可访问的 registry。
+`@liveshops/host-sdk` 与 `@liveshops/design-tokens` 从 npm 安装已发布版本（`0.3.4` / `1.5.3`）。禁止 `file:` 指向 Platform 源码。
 
 页面本身不能脱离 Host 独立跑通：没有握手就没有 session。要看真实效果，把 `admin` Host 指向上面的 dev 端口。
 

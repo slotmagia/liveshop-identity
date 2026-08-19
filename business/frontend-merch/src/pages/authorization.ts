@@ -1,6 +1,6 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
-import { hostFormModal } from '@liveshop/host-sdk'
-import { button, dataCard, page, statusLine, table } from '@liveshop/design-tokens'
+import type { HostHttpClient } from '@liveshops/host-sdk'
+import { hostFormModal } from '@liveshops/host-sdk'
+import { button, dataCard, page, statusLine, table } from '@liveshops/design-tokens'
 import { permissionTree } from '../../../ui/permission-tree'
 
 interface Role { id:number; code:string; name:string; status:string; systemRole:boolean; version:number }

@@ -72,7 +72,7 @@ INSERT INTO identity_visitor_risk
 VALUES
     (1, 2001, 3001, 'v-1001', 88, 'HIGH', 'RESTRICTED', 2, '2026-08-18 10:20:00.000'),
     (2, 2001, 3001, 'v-1002', 55, 'MEDIUM', 'WATCH', 1, '2026-08-18 10:05:00.000')
-ON DUPLICATE KEY UPDATE score = VALUES(score), level = VALUES(level), status = VALUES(status), version = VALUES(version);
+ON DUPLICATE KEY UPDATE visitor_risk_id = visitor_risk_id;
 
 INSERT INTO identity_risk_event
     (event_id, merchant_id, shop_id, visitor_id, nickname, room_id, reason,

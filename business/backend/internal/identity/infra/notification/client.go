@@ -47,7 +47,7 @@ func (c *Client) Dispatch(ctx context.Context, message auth.Dispatch) ([]model.D
 	if c == nil || c.rpc == nil {
 		return nil, model.ErrUnavailable
 	}
-	call, cancel := context.WithTimeout(ctx, 5*time.Second)
+	call, cancel := context.WithTimeout(ctx, 12*time.Second)
 	defer cancel()
 	response, err := c.rpc.Dispatch(call, &platformv1.DispatchRequest{
 		EventKey:    message.EventKey,

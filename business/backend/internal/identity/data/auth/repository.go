@@ -35,6 +35,21 @@ WHERE s.code=? AND s.status='ACTIVE' FOR UPDATE`, record.ShopCode).
 	if err != nil {
 		return model.Record{}, fmt.Errorf("auth otp resolve shop: %w", err)
 	}
+	var lastCreated time.Time
+	err = tx.QueryRowContext(ctx, `SELECT created_at FROM identity_auth_otp_challenge
+WHERE shop_id=? AND phone=? AND email=?
+ORDER BY created_at DESC LIMIT 1 FOR UPDATE`, record.ShopID, record.Phone, record.Email).Scan(&lastCreated)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return model.Record{}, fmt.Errorf("auth otp last send: %w", err)
+	}
+	if err == nil {
+		if remaining := model.RemainingResendSeconds(lastCreated, record.CreatedAt); remaining > 0 {
+			return model.Record{}, &model.ResendCooldownError{
+				ResendAfterSeconds: remaining,
+				NextSendAt:         model.NextSendAt(lastCreated),
+			}
+		}
+	}
 	if _, err := tx.ExecContext(ctx, `UPDATE identity_auth_otp_challenge
 SET status='EXPIRED' WHERE shop_id=? AND phone=? AND email=? AND status='PENDING'`, record.ShopID, record.Phone, record.Email); err != nil {
 		return model.Record{}, fmt.Errorf("auth otp expire previous: %w", err)

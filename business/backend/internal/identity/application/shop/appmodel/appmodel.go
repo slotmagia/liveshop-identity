@@ -8,14 +8,17 @@ type Health struct {
 
 type CreateLoginOTP struct {
 	ShopCode string
+	Channel  string
 	Phone    string
 	Email    string
 }
 
 type LoginOTP struct {
-	ChallengeID string
-	TTLSeconds  int
-	ExpiresAt   string
+	ChallengeID        string
+	TTLSeconds         int
+	ExpiresAt          string
+	ResendAfterSeconds int
+	NextSendAt         string
 }
 
 type CreateLogin struct {

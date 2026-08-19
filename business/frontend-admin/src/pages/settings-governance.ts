@@ -1,6 +1,6 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
-import { hostFormModal } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, page, searchCard, searchForm, statusLine, table, ui } from '@liveshop/design-tokens'
+import type { HostHttpClient } from '@liveshops/host-sdk'
+import { hostFormModal } from '@liveshops/host-sdk'
+import { badge, button, create, dataCard, page, searchCard, searchForm, statusLine, table, ui } from '@liveshops/design-tokens'
 
 interface Merchant { merchantId: number; name: string; status: 'ACTIVE' | 'DISABLED' }
 interface Shop { shopId: number; merchantId: number; name: string; code: string; status: 'ACTIVE' | 'DISABLED' }

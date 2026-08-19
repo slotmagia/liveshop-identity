@@ -82,10 +82,16 @@ func (o *OTP) Request(ctx context.Context, command model.RequestCommand) (model.
 			"ttlSeconds": strconv.Itoa(model.TTLSeconds),
 		},
 	})
-	if err != nil || !model.Delivered(deliveries) {
+	if err != nil || !model.Delivered(normalized.Channel, deliveries) {
 		return model.Challenge{}, model.ErrDeliveryFailed
 	}
-	return model.Challenge{ID: record.ID, TTLSeconds: record.TTLSeconds, ExpiresAt: record.ExpiresAt}, nil
+	return model.Challenge{
+		ID:                 record.ID,
+		TTLSeconds:         record.TTLSeconds,
+		ExpiresAt:          record.ExpiresAt,
+		ResendAfterSeconds: model.ResendIntervalSeconds,
+		NextSendAt:         model.NextSendAt(record.CreatedAt),
+	}, nil
 }
 
 func (o *OTP) Verify(ctx context.Context, command model.VerifyCommand) (model.Challenge, error) {

@@ -1,5 +1,5 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, definitionList, emptyState, grid, notify, page, ui } from '@liveshop/design-tokens'
+import type { HostHttpClient } from '@liveshops/host-sdk'
+import { badge, button, create, dataCard, definitionList, emptyState, grid, notify, page, ui } from '@liveshops/design-tokens'
 
 interface MerchantProfile {
   merchantId: number

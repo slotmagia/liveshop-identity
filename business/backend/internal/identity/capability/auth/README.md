@@ -8,6 +8,6 @@
 - `../../data/auth/`：生产仓储适配器的目标目录。
 - `../../infra/notification/`：Platform `Dispatch` 客户端；本 capability 只通过 `Notifier` 端口调用，不拥有投递证据。
 
-登录验证码事件 `identity.auth.otp.requested` 由 Shop Manifest 操作 `identity.shop.login.otp.create` 声明。Identity 先提交挑战，再 SYNC 调用 Platform；Platform 不知道验证码是否正确。游客升级为顾客不在本切片。
+登录验证码事件 `identity.auth.otp.requested` 由 Shop Manifest 操作 `identity.shop.login.otp.create` 声明。请求带 `channel=SMS|EMAIL` 与对应目的地；Identity 先提交挑战，再 SYNC 调用 Platform。成功响应对调用方给出验证码有效期和下次可发送时间。Identity 不覆盖 Platform 渠道策略，只把该渠道收件人交给 `Dispatch`。Platform 不知道验证码是否正确。游客升级为顾客不在本切片。
 
 本目录不是独立服务；公开 HTTP/gRPC/事件契约仍由 identity 模块统一发布。

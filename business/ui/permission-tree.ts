@@ -1,4 +1,4 @@
-import type { CheckboxTreeNode } from '@liveshop/design-tokens'
+import type { CheckboxTreeNode } from '@liveshops/design-tokens'
 
 export interface PermissionTreeItem {
   moduleId?: string

@@ -1,6 +1,6 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
-import { hostFormModal } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, page, statusLine, table, ui } from '@liveshop/design-tokens'
+import type { HostHttpClient } from '@liveshops/host-sdk'
+import { hostFormModal } from '@liveshops/host-sdk'
+import { badge, button, create, dataCard, page, statusLine, table, ui } from '@liveshops/design-tokens'
 
 interface ShopCategory {
   id: number

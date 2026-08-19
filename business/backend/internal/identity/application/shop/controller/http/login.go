@@ -16,11 +16,17 @@ func NewLogin(application service.Shop) *LoginController {
 }
 
 func (c *LoginController) CreateOTP(ctx context.Context, request *api.CreateOTPReq) (*api.CreateOTPRes, error) {
-	value, err := c.service.CreateLoginOTP(ctx, appmodel.CreateLoginOTP{ShopCode: request.ShopCode, Phone: request.Phone, Email: request.Email})
+	value, err := c.service.CreateLoginOTP(ctx, appmodel.CreateLoginOTP{ShopCode: request.ShopCode, Channel: request.Channel, Phone: request.Phone, Email: request.Email})
 	if err != nil {
 		return nil, web.Failure(err)
 	}
-	return &api.CreateOTPRes{ChallengeID: value.ChallengeID, TTLSeconds: value.TTLSeconds, ExpiresAt: value.ExpiresAt}, nil
+	return &api.CreateOTPRes{
+		ChallengeID:        value.ChallengeID,
+		TTLSeconds:         value.TTLSeconds,
+		ExpiresAt:          value.ExpiresAt,
+		ResendAfterSeconds: value.ResendAfterSeconds,
+		NextSendAt:         value.NextSendAt,
+	}, nil
 }
 
 func (c *LoginController) Create(ctx context.Context, request *api.CreateReq) (*api.CreateRes, error) {

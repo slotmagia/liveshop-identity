@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -22,6 +23,18 @@ func (m *memoryRepository) CreatePending(_ context.Context, record model.Record)
 	shop, ok := m.shops[record.ShopCode]
 	if !ok {
 		return model.Record{}, model.ErrInvalid
+	}
+	var lastCreated time.Time
+	for _, existing := range m.records {
+		if existing.ShopID == shop.shopID && existing.Phone == record.Phone && existing.Email == record.Email && existing.CreatedAt.After(lastCreated) {
+			lastCreated = existing.CreatedAt
+		}
+	}
+	if remaining := model.RemainingResendSeconds(lastCreated, record.CreatedAt); remaining > 0 {
+		return model.Record{}, &model.ResendCooldownError{
+			ResendAfterSeconds: remaining,
+			NextSendAt:         model.NextSendAt(lastCreated),
+		}
 	}
 	for id, existing := range m.records {
 		if existing.ShopID == shop.shopID && existing.Phone == record.Phone && existing.Email == record.Email && existing.Status == model.StatusPending {
@@ -119,10 +132,13 @@ func TestRequestDispatchesAfterChallengeCommit(t *testing.T) {
 		}
 	}
 	challenge, err := newOTP(repo, notifier).Request(context.Background(), model.RequestCommand{
-		ShopCode: "local-shop", Phone: "13800000000",
+		ShopCode: "local-shop", Channel: model.ChannelSMS, Phone: "13800000000",
 	})
 	if err != nil || challenge.ID == "" || challenge.TTLSeconds != model.TTLSeconds {
 		t.Fatalf("challenge=%+v err=%v", challenge, err)
+	}
+	if challenge.ResendAfterSeconds != model.ResendIntervalSeconds || challenge.NextSendAt.IsZero() {
+		t.Fatalf("resend window=%+v", challenge)
 	}
 	if notifier.calls != 1 || notifier.last.EventKey != model.EventKey || notifier.last.DeliveryKey != model.DeliveryKey(challenge.ID) {
 		t.Fatalf("dispatch=%+v", notifier.last)
@@ -146,7 +162,7 @@ func TestRequestKeepsChallengeWhenDeliveryFails(t *testing.T) {
 		{Channel: "EMAIL", Status: "FAILED_PERMANENT"},
 	}}
 	_, err := newOTP(repo, notifier).Request(context.Background(), model.RequestCommand{
-		ShopCode: "local-shop", Email: "buyer@example.com",
+		ShopCode: "local-shop", Channel: model.ChannelEmail, Email: "buyer@example.com",
 	})
 	if err != model.ErrDeliveryFailed {
 		t.Fatalf("err=%v", err)
@@ -167,7 +183,7 @@ func TestVerifyConsumesMatchingCode(t *testing.T) {
 		records: map[string]model.Record{},
 	}
 	otp := newOTP(repo, &recordingNotifier{deliveries: []model.Delivery{{Channel: "SMS", Status: model.StatusSent}}})
-	challenge, err := otp.Request(context.Background(), model.RequestCommand{ShopCode: "local-shop", Phone: "13800000000"})
+	challenge, err := otp.Request(context.Background(), model.RequestCommand{ShopCode: "local-shop", Channel: model.ChannelSMS, Phone: "13800000000"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +203,7 @@ func TestVerifyRejectsWrongCodeWithoutDeletingChallenge(t *testing.T) {
 		records: map[string]model.Record{},
 	}
 	otp := newOTP(repo, &recordingNotifier{deliveries: []model.Delivery{{Channel: "SMS", Status: model.StatusSent}}})
-	challenge, err := otp.Request(context.Background(), model.RequestCommand{ShopCode: "local-shop", Phone: "13800000000"})
+	challenge, err := otp.Request(context.Background(), model.RequestCommand{ShopCode: "local-shop", Channel: model.ChannelSMS, Phone: "13800000000"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,5 +213,81 @@ func TestVerifyRejectsWrongCodeWithoutDeletingChallenge(t *testing.T) {
 	stored, _ := repo.Get(context.Background(), challenge.ID)
 	if stored.Status != model.StatusPending || stored.AttemptCount != 1 {
 		t.Fatalf("stored=%+v", stored)
+	}
+}
+
+func TestRequestFailsWhenOnlyUnrequestedChannelSent(t *testing.T) {
+	repo := &memoryRepository{
+		shops:   map[string]struct{ merchantID, shopID int64 }{"local-shop": {2001, 3001}},
+		records: map[string]model.Record{},
+	}
+	notifier := &recordingNotifier{deliveries: []model.Delivery{
+		{Channel: model.ChannelSMS, Status: "FAILED_PERMANENT"},
+		{Channel: model.ChannelEmail, Status: model.StatusSent},
+	}}
+	_, err := newOTP(repo, notifier).Request(context.Background(), model.RequestCommand{
+		ShopCode: "local-shop", Channel: model.ChannelSMS, Phone: "13800000000",
+	})
+	if err != model.ErrDeliveryFailed {
+		t.Fatalf("err=%v", err)
+	}
+}
+
+func TestRequestSucceedsWhenRequestedChannelSent(t *testing.T) {
+	repo := &memoryRepository{
+		shops:   map[string]struct{ merchantID, shopID int64 }{"local-shop": {2001, 3001}},
+		records: map[string]model.Record{},
+	}
+	notifier := &recordingNotifier{deliveries: []model.Delivery{
+		{Channel: model.ChannelSMS, Status: model.StatusSent},
+		{Channel: model.ChannelEmail, Status: "FAILED_PERMANENT"},
+	}}
+	challenge, err := newOTP(repo, notifier).Request(context.Background(), model.RequestCommand{
+		ShopCode: "local-shop", Channel: model.ChannelSMS, Phone: "13800000000",
+	})
+	if err != nil || challenge.ID == "" {
+		t.Fatalf("challenge=%+v err=%v", challenge, err)
+	}
+}
+
+func TestRequestRejectsResendWithinCooldown(t *testing.T) {
+	repo := &memoryRepository{
+		shops:   map[string]struct{ merchantID, shopID int64 }{"local-shop": {2001, 3001}},
+		records: map[string]model.Record{},
+	}
+	notifier := &recordingNotifier{deliveries: []model.Delivery{{Channel: model.ChannelEmail, Status: model.StatusSent}}}
+	otp := newOTP(repo, notifier)
+	command := model.RequestCommand{ShopCode: "local-shop", Channel: model.ChannelEmail, Email: "buyer@example.com"}
+	if _, err := otp.Request(context.Background(), command); err != nil {
+		t.Fatal(err)
+	}
+	_, err := otp.Request(context.Background(), command)
+	var cooldown *model.ResendCooldownError
+	if !errors.As(err, &cooldown) || cooldown.ResendAfterSeconds != model.ResendIntervalSeconds {
+		t.Fatalf("err=%v cooldown=%+v", err, cooldown)
+	}
+	if repo.createCalls != 1 || notifier.calls != 1 {
+		t.Fatalf("createCalls=%d dispatch=%d", repo.createCalls, notifier.calls)
+	}
+}
+
+func TestRequestAllowsResendAfterCooldown(t *testing.T) {
+	repo := &memoryRepository{
+		shops:   map[string]struct{ merchantID, shopID int64 }{"local-shop": {2001, 3001}},
+		records: map[string]model.Record{},
+	}
+	otp := newOTP(repo, &recordingNotifier{deliveries: []model.Delivery{{Channel: model.ChannelSMS, Status: model.StatusSent}}})
+	command := model.RequestCommand{ShopCode: "local-shop", Channel: model.ChannelSMS, Phone: "13800000000"}
+	first, err := otp.Request(context.Background(), command)
+	if err != nil {
+		t.Fatal(err)
+	}
+	otp.now = func() time.Time { return time.Date(2026, 8, 18, 12, 1, 0, 0, time.UTC) }
+	second, err := otp.Request(context.Background(), command)
+	if err != nil || second.ID == "" || second.ID == first.ID {
+		t.Fatalf("second=%+v err=%v", second, err)
+	}
+	if repo.createCalls != 2 {
+		t.Fatalf("createCalls=%d", repo.createCalls)
 	}
 }

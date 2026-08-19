@@ -1,6 +1,6 @@
-import type { HostContext, HostHttpClient } from '@liveshop/host-sdk'
-import { hostFormModal } from '@liveshop/host-sdk'
-import { button, card, dataCard, page, statusLine } from '@liveshop/design-tokens'
+import type { HostContext, HostHttpClient } from '@liveshops/host-sdk'
+import { hostFormModal } from '@liveshops/host-sdk'
+import { button, card, dataCard, page, statusLine } from '@liveshops/design-tokens'
 
 interface Credential { id:number;version:number;kind:string;identifier:string;status:string }
 interface User { subject:string;displayName:string;principalType:string;subjectStatus:string;subjectVersion:number;memberStatus:string;accessVersion:number;credential:Credential;roleIds:number[];activeSessions:number }

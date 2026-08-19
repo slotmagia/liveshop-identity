@@ -1,4 +1,4 @@
-import { connectToHost, createHttpClient } from '@liveshop/host-sdk'
+import { connectToHost, createHttpClient } from '@liveshops/host-sdk'
 
 import { renderAccount } from './pages/account'
 import { renderSecurity } from './pages/security'

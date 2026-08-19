@@ -1,5 +1,5 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
-import { badge, button, dataCard, notify, page, pagination, searchCard, searchForm, table } from '@liveshop/design-tokens'
+import type { HostHttpClient } from '@liveshops/host-sdk'
+import { badge, button, dataCard, notify, page, pagination, searchCard, searchForm, table } from '@liveshops/design-tokens'
 
 interface RiskEvent {
   id: number

@@ -37,9 +37,5 @@ $kernelRoot = [IO.Path]::GetFullPath((Join-Path $root '..\..\kernel-go'))
 $token = & go -C $kernelRoot run ./cmd/workloadtoken
 if ($LASTEXITCODE -ne 0 -or -not $token) { throw 'failed to issue local module release identity' }
 $headers = @{Authorization="Bearer $token"}
-$body = $manifest | ConvertTo-Json -Depth 100 -Compress
-$release = Invoke-RestMethod -Method Post -Uri "$PlatformUrl/internal/v1/module-registry/releases" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($body))
-$activationBody = @{moduleId='identity';version=$manifest.metadata.version} | ConvertTo-Json -Compress
-$activation = Invoke-RestMethod -Method Post -Uri "$PlatformUrl/internal/v1/module-registry/activate" -Headers $headers -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($activationBody))
-if ($release.code -ne 0 -or $activation.code -ne 0) { throw 'Identity module registration failed' }
-Write-Output "Identity $($manifest.metadata.version) registered and activated. digest=$($release.data.digest)"
+. (Join-Path $PSScriptRoot '..\..\..\..\register-local-release.ps1')
+Publish-LocalModuleRelease -PlatformUrl $PlatformUrl -ModuleId 'identity' -Manifest $manifest -Headers $headers

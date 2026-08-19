@@ -1,5 +1,5 @@
-import type { HostContext, HostHttpClient } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, definitionList, page, statusLine } from '@liveshop/design-tokens'
+import type { HostContext, HostHttpClient } from '@liveshops/host-sdk'
+import { badge, button, create, dataCard, definitionList, page, statusLine } from '@liveshops/design-tokens'
 
 // The page is transport-neutral: it receives an already-authorized client and
 // never builds a URL or a token itself. A test can drive it with a stub client.

@@ -1,6 +1,6 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
-import { hostFormModal } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, definitionList, page, statusLine } from '@liveshop/design-tokens'
+import type { HostHttpClient } from '@liveshops/host-sdk'
+import { hostFormModal } from '@liveshops/host-sdk'
+import { badge, button, create, dataCard, definitionList, page, statusLine } from '@liveshops/design-tokens'
 
 interface Credential {
   id: number

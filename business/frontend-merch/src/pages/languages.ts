@@ -1,6 +1,6 @@
-import type { HostContext, HostHttpClient } from '@liveshop/host-sdk'
-import { randomUUID } from '@liveshop/host-sdk'
-import { button, dataCard, notify, page } from '@liveshop/design-tokens'
+import type { HostContext, HostHttpClient } from '@liveshops/host-sdk'
+import { randomUUID } from '@liveshops/host-sdk'
+import { button, dataCard, notify, page } from '@liveshops/design-tokens'
 
 interface LanguageItem {
   locale: string

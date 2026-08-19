@@ -1,5 +1,5 @@
-import type { HostContext, HostHttpClient } from '@liveshop/host-sdk'
-import { badge, button, create, dataCard, definitionList, page, statusLine, ui } from '@liveshop/design-tokens'
+import type { HostContext, HostHttpClient } from '@liveshops/host-sdk'
+import { badge, button, create, dataCard, definitionList, page, statusLine, ui } from '@liveshops/design-tokens'
 
 interface Shop {
   shopId: number

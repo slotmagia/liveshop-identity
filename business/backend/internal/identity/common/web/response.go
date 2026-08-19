@@ -151,6 +151,7 @@ var domainStatus = []struct {
 	{authmodel.ErrNotFound, http.StatusNotFound},
 	{authmodel.ErrExpired, http.StatusConflict},
 	{authmodel.ErrDeliveryFailed, http.StatusServiceUnavailable},
+	{authmodel.ErrResendCooldown, http.StatusConflict},
 }
 
 // Failure maps an application error to its transport status. Anything that is

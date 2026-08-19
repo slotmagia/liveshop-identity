@@ -765,7 +765,7 @@ func TestShopLoginOTPIsPublicOnShopSurface(t *testing.T) {
 	health := base + "/shop/identity/health"
 	otp := base + "/shop/identity/login/otp"
 	login := base + "/shop/identity/login"
-	body := `{"shopCode":"local-shop","phone":"13800000000"}`
+	body := `{"shopCode":"local-shop","channel":"SMS","phone":"13800000000"}`
 
 	if status, got := call(t, health, "shop", ""); status != http.StatusOK {
 		t.Fatalf("shop health status=%d body=%s", status, got)
@@ -1661,8 +1661,15 @@ func (stubOTPRepository) Get(context.Context, string) (authmodel.Record, error) 
 
 type stubOTPNotifier struct{}
 
-func (stubOTPNotifier) Dispatch(context.Context, auth.Dispatch) ([]authmodel.Delivery, error) {
-	return []authmodel.Delivery{{Channel: "SMS", Status: authmodel.StatusSent}}, nil
+func (stubOTPNotifier) Dispatch(_ context.Context, message auth.Dispatch) ([]authmodel.Delivery, error) {
+	deliveries := make([]authmodel.Delivery, 0, 2)
+	if message.Phone != "" {
+		deliveries = append(deliveries, authmodel.Delivery{Channel: authmodel.ChannelSMS, Status: authmodel.StatusSent})
+	}
+	if message.Email != "" {
+		deliveries = append(deliveries, authmodel.Delivery{Channel: authmodel.ChannelEmail, Status: authmodel.StatusSent})
+	}
+	return deliveries, nil
 }
 
 type stubCustomer struct{}

@@ -1,4 +1,4 @@
-import type { HostHttpClient } from '@liveshop/host-sdk'
+import type { HostHttpClient } from '@liveshops/host-sdk'
 
 const ROOT = '/shop/identity'
 
@@ -47,6 +47,14 @@ export interface SMSRegion {
   emoji: string
 }
 
+export interface LoginOTP {
+  challengeId: string
+  ttlSeconds: number
+  expiresAt: string
+  resendAfterSeconds: number
+  nextSendAt: string
+}
+
 export interface AftersaleItem {
   id: number
   skuId: number
@@ -80,6 +88,20 @@ export class IdentityShopApi {
 
   loginSMSRegions(shopCode: string): Promise<{ items: SMSRegion[]; unrestricted: boolean }> {
     return this.client.request(`${ROOT}/login/sms-regions?shopCode=${encodeURIComponent(shopCode)}`)
+  }
+
+  createLoginOTP(input: { shopCode: string; channel: 'SMS' | 'EMAIL'; phone?: string; email?: string }): Promise<LoginOTP> {
+    return this.client.request(`${ROOT}/login/otp`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
+  }
+
+  verifyLogin(input: { shopCode: string; challengeId: string; code: string }): Promise<{ challengeId: string; verified: boolean }> {
+    return this.client.request(`${ROOT}/login`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    })
   }
 
   profile(): Promise<Profile> {

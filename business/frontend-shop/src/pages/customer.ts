@@ -1,6 +1,6 @@
-import type { RemoteModuleContext } from '@liveshop/host-sdk'
-import { create, notify } from '@liveshop/design-tokens'
-import { cta, emptyState } from '@liveshop/design-tokens/storefront'
+import type { RemoteModuleContext } from '@liveshops/host-sdk'
+import { create, notify } from '@liveshops/design-tokens'
+import { cta, emptyState } from '@liveshops/design-tokens/storefront'
 
 import { IdentityShopApi, type Address, type AddressInput } from '../api'
 
