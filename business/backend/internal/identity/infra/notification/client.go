@@ -21,7 +21,7 @@ type Client struct {
 	conn *grpc.ClientConn
 }
 
-func New(c config.PlatformRegistry) (*Client, error) {
+func New(c config.PlatformNotification) (*Client, error) {
 	cert, err := tls.LoadX509KeyPair(c.TLS.CertificateFile, c.TLS.PrivateKeyFile)
 	if err != nil {
 		return nil, err

@@ -19,6 +19,7 @@ type Config struct {
 	AccessIdentity          AccessIdentity          `json:"access_identity"`
 	GRPC                    GRPC                    `json:"grpc"`
 	PlatformRegistry        PlatformRegistry        `json:"platform_registry"`
+	PlatformNotification    PlatformNotification    `json:"platform_notification"`
 	SubscriptionEntitlement SubscriptionEntitlement `json:"subscription_entitlement"`
 	Compose                 Compose                 `json:"compose"`
 }
@@ -56,6 +57,12 @@ type PlatformRegistry struct {
 	MaxStaleness string  `json:"max_staleness"`
 	SyncInterval string  `json:"sync_interval"`
 	TLS          GRPCTLS `json:"tls"`
+}
+
+type PlatformNotification struct {
+	Endpoint   string  `json:"endpoint"`
+	ServerName string  `json:"server_name"`
+	TLS        GRPCTLS `json:"tls"`
 }
 type SubscriptionEntitlement struct {
 	MaxStaleness string `json:"max_staleness"`

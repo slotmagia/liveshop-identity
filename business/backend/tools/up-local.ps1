@@ -53,9 +53,9 @@ function Wait-Ready([string]$Url, [int]$TimeoutMinutes = 5) {
 Ensure-LocalNetwork
 $certs = Invoke-Native { docker volume ls -q --filter 'name=^liveshop-grpc-certs$' }
 if ("$certs".Trim() -ne 'liveshop-grpc-certs') {
-  throw 'Missing liveshop-grpc-certs. Start Platform containers first: liveshop-platform/business/backend/tools/up-local.ps1'
+  throw 'Missing liveshop-grpc-certs. Start Registry containers first: liveshop-registry/business/backend/tools/up-local.ps1'
 }
-Wait-Ready 'http://127.0.0.1:18082/readyz'
+Wait-Ready 'http://127.0.0.1:18070/readyz'
 
 if ($Fresh) {
   Invoke-Native { docker compose -f $compose down -v --remove-orphans } 'Failed to reset the local Identity stack.'
@@ -74,7 +74,7 @@ foreach ($url in @(
 
 if ($Register) {
   & (Join-Path $tools 'register-local.ps1') `
-    -PlatformUrl 'http://127.0.0.1:18082' `
+    -PlatformUrl 'http://127.0.0.1:18070' `
     -BackendOrigin 'http://identity:18092' `
     -GRPCEndpoint 'dns:///identity:19092' `
     -AdminArtifactUrl 'http://127.0.0.1:15201' `

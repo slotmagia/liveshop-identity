@@ -330,6 +330,15 @@ func manifestGRPC(contract *platformv1.GrpcContract) map[string]any {
 	}
 	return map[string]any{"service": contract.Service, "contractVersion": contract.ContractVersion, "endpoint": contract.Endpoint, "transportSecurity": contract.TransportSecurity, "methods": methods}
 }
+func (r *AuthorizationRepository) LocalRegistryRevision(ctx context.Context) (uint64, error) {
+	var revision uint64
+	err := r.db.QueryRowContext(ctx, `SELECT registry_revision FROM identity_registry_projection_state WHERE singleton_id=1`).Scan(&revision)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return revision, err
+}
+
 func (r *AuthorizationRepository) RegistryReady(ctx context.Context, maxAge time.Duration) error {
 	var revision uint64
 	var at time.Time

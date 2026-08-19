@@ -1,5 +1,5 @@
 param(
-  [string]$PlatformUrl = 'http://127.0.0.1:18082',
+  [string]$PlatformUrl = 'http://127.0.0.1:18070',
   [string]$BackendOrigin = 'http://identity:18092',
   [string]$GRPCEndpoint = 'dns:///identity:19092',
   [string]$AdminArtifactUrl = 'http://127.0.0.1:15201',

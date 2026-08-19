@@ -42,10 +42,18 @@ grpc:
     client_ca_file: /run/grpc/ca.pem
 
 platform_registry:
-  endpoint: dns:///platform:19082
-  server_name: platform
+  endpoint: dns:///registry:19070
+  server_name: registry
   max_staleness: 2m
   sync_interval: 15s
+  tls:
+    certificate_file: /run/grpc/identity-client.pem
+    private_key_file: /run/grpc/identity-client-key.pem
+    client_ca_file: /run/grpc/ca.pem
+
+platform_notification:
+  endpoint: dns:///platform:19082
+  server_name: platform
   tls:
     certificate_file: /run/grpc/identity-client.pem
     private_key_file: /run/grpc/identity-client-key.pem

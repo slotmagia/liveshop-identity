@@ -43,6 +43,9 @@ func (c Config) Validate() error {
 	if c.PlatformRegistry.Endpoint == "" || c.PlatformRegistry.ServerName == "" || c.PlatformRegistry.TLS.CertificateFile == "" || c.PlatformRegistry.TLS.PrivateKeyFile == "" || c.PlatformRegistry.TLS.ClientCAFile == "" {
 		return errors.New("platform_registry endpoint, server_name and TLS files are required")
 	}
+	if c.PlatformNotification.Endpoint == "" || c.PlatformNotification.ServerName == "" || c.PlatformNotification.TLS.CertificateFile == "" || c.PlatformNotification.TLS.PrivateKeyFile == "" || c.PlatformNotification.TLS.ClientCAFile == "" {
+		return errors.New("platform_notification endpoint, server_name and TLS files are required")
+	}
 	if _, err := duration("platform_registry.max_staleness", c.PlatformRegistry.MaxStaleness); err != nil {
 		return err
 	}

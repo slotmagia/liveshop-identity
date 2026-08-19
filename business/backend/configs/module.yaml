@@ -45,10 +45,18 @@ grpc:
     client_ca_file: ""
 
 platform_registry:
-  endpoint: "dns:///platform:19082"
-  server_name: "platform"
+  endpoint: "dns:///registry:19070"
+  server_name: "registry"
   max_staleness: 2m
   sync_interval: 15s
+  tls:
+    certificate_file: ""
+    private_key_file: ""
+    client_ca_file: ""
+
+platform_notification:
+  endpoint: "dns:///platform:19082"
+  server_name: "platform"
   tls:
     certificate_file: ""
     private_key_file: ""

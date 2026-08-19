@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/lvtuopen-ai/kernel-go/accessidentity"
+	"github.com/lvtuopen-ai/kernel-go/logctx"
 	"github.com/lvtuopen-ai/kernel-go/modulesession"
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/app/authendpoint"
@@ -201,9 +202,13 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 		return nil, err
 	}
 	if err = registrySync.Once(ctx); err != nil {
-		_ = registrySync.Close()
-		_ = database.Close()
-		return nil, fmt.Errorf("identity: initial registry projection sync failed: %w", err)
+		revision, localErr := authorizationRepository.LocalRegistryRevision(ctx)
+		if localErr != nil || revision == 0 {
+			_ = registrySync.Close()
+			_ = database.Close()
+			return nil, fmt.Errorf("identity: initial registry projection sync failed: %w", err)
+		}
+		logctx.FromContext(ctx).Warn("identity: registry unreachable; continuing with last projection", "revision", revision, "error", err)
 	}
 	entitlementSync, err := entitlementsync.New(settings.SubscriptionEntitlement, permissionPlans, authorizationRepository)
 	if err != nil {
@@ -217,7 +222,7 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 		_ = database.Close()
 		return nil, fmt.Errorf("identity: initial Subscription entitlement sync failed: %w", err)
 	}
-	notifyClient, err := notification.New(settings.PlatformRegistry)
+	notifyClient, err := notification.New(settings.PlatformNotification)
 	if err != nil {
 		_ = entitlementSync.Close()
 		_ = registrySync.Close()
