@@ -87,16 +87,86 @@ wait_http() {
   return 1
 }
 
+compose_cmd() {
+  local target_release="$1"
+  shift
+  docker compose --env-file "$target_release/.env" \
+    -f "$target_release/business/backend/deploy/compose.local.yml" \
+    -f "$target_release/business/backend/deploy/compose.test.yml" \
+    "$@"
+}
+
+current_registry_revision() {
+  local cid revision
+  cid="$(docker ps -qf 'label=com.docker.compose.service=registry-center-db' | head -n1 || true)"
+  if [ -z "$cid" ]; then
+    printf '0'
+    return 0
+  fi
+  revision="$(docker exec -e MYSQL_PWD=liveshop-local "$cid" \
+    mysql -Nse 'SELECT IFNULL(MAX(revision),0) FROM platform_registry_state WHERE id=1' \
+    -h 127.0.0.1 -uliveshop liveshop_module_registry 2>/dev/null || true)"
+  printf '%s' "${revision:-0}"
+}
+
+current_identity_projection_revision() {
+  local target_release="$1" revision
+  revision="$(compose_cmd "$target_release" exec -T -e MYSQL_PWD=liveshop-local identity-db \
+    mysql -Nse 'SELECT IFNULL(MAX(registry_revision),0) FROM identity_registry_projection_state WHERE singleton_id=1' \
+    -h 127.0.0.1 -uliveshop liveshop_identity 2>/dev/null || true)"
+  printf '%s' "${revision:-0}"
+}
+
+# Identity refuses a Registry snapshot whose revision is lower than the durable
+# bookmark. A new Registry volume starts at a low revision while the Identity
+# MySQL volume still holds the previous catalog.
+reconcile_identity_registry_projection() {
+  local target_release="$1"
+  local registry_revision identity_revision
+  registry_revision="$(current_registry_revision | tr -d '[:space:]')"
+  identity_revision="$(current_identity_projection_revision "$target_release" | tr -d '[:space:]')"
+  registry_revision="${registry_revision:-0}"
+  identity_revision="${identity_revision:-0}"
+  if ! [[ "$registry_revision" =~ ^[0-9]+$ ]]; then
+    return 0
+  fi
+  if ! [[ "$identity_revision" =~ ^[0-9]+$ ]]; then
+    return 0
+  fi
+  if [ "$identity_revision" -le "$registry_revision" ]; then
+    return 0
+  fi
+  printf 'Identity Registry projection revision %s is ahead of Registry revision %s; clearing the bookmark.\n' \
+    "$identity_revision" "$registry_revision"
+  compose_cmd "$target_release" exec -T -e MYSQL_PWD=liveshop-local identity-db \
+    mysql -h 127.0.0.1 -uliveshop liveshop_identity -e \
+    'DELETE FROM identity_registry_projection_state WHERE singleton_id=1;
+     UPDATE identity_permission_projection SET active=0;
+     UPDATE identity_contribution_projection SET active=0;
+     UPDATE identity_module_projection SET active=0;'
+  compose_cmd "$target_release" restart identity
+  wait_tcp "$BACKEND_PORT"
+}
+
+previous_release_targets_extracted_registry() {
+  local config="$1/business/backend/configs/identity.compose.yaml"
+  local endpoint
+  [ -f "$config" ] || return 1
+  endpoint="$(awk '/^platform_registry:/{p=1} p && /endpoint:/{print; exit}' "$config")"
+  [[ "$endpoint" == *dns:///registry:* ]]
+}
+
 activate_release() {
   local target_release="$1"
   set -a
   source "$target_release/.env"
   set +a
 
-  docker compose     --env-file "$target_release/.env"     -f "$target_release/business/backend/deploy/compose.local.yml"     -f "$target_release/business/backend/deploy/compose.test.yml"     pull
-  docker compose     --env-file "$target_release/.env"     -f "$target_release/business/backend/deploy/compose.local.yml"     -f "$target_release/business/backend/deploy/compose.test.yml"     up -d --no-build --remove-orphans
+  compose_cmd "$target_release" pull
+  compose_cmd "$target_release" up -d --no-build --remove-orphans
 
   wait_tcp "$BACKEND_PORT"
+  reconcile_identity_registry_projection "$target_release"
 
   while IFS= read -r entry; do
     [ -n "$entry" ] && wait_http "$entry" non5xx
@@ -115,13 +185,16 @@ rollback() {
   set +e
   printf 'Deployment failed for %s; starting application rollback.\n' "$MODULE_NAME" >&2
   if [ -n "$previous_release" ] && [ -d "$previous_release" ]; then
-    if activate_release "$previous_release"; then
+    if ! previous_release_targets_extracted_registry "$previous_release"; then
+      printf 'Skipping rollback to %s; that release still consumes Platform as Registry.\n' \
+        "$(basename "$previous_release")" >&2
+    elif activate_release "$previous_release"; then
       printf 'Rolled back %s to %s. Database migrations remain forward-only.\n' "$MODULE_NAME" "$(basename "$previous_release")" >&2
     else
       printf 'Rollback also failed for %s; manual recovery is required.\n' "$MODULE_NAME" >&2
     fi
   else
-    docker compose       --env-file "$release_dir/.env"       -f "$release_dir/business/backend/deploy/compose.local.yml"       -f "$release_dir/business/backend/deploy/compose.test.yml"       down --remove-orphans
+    compose_cmd "$release_dir" down --remove-orphans
   fi
   exit "$exit_code"
 }
