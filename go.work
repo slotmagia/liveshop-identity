@@ -4,5 +4,6 @@ go 1.25.0
 // published protocol module instead of using this workspace.
 use (
 	./business/backend
-	./protocol
+	../liveshop-protocol/identity
+	../liveshop-protocol/platform
 )

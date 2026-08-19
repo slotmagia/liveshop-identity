@@ -12,7 +12,7 @@ authenticated_base="${CI_SERVER_PROTOCOL}://gitlab-ci-token:${CI_JOB_TOKEN}@${se
 
 for repository in ${DEPENDENCY_REPOSITORIES:-}; do
   case "$repository" in
-    kernel-go|liveshop-platform|liveshop-identity|liveshop-gateway|liveshop-catalog|liveshop-trade|liveshop-live) ;;
+    kernel-go|liveshop-platform|liveshop-identity|liveshop-gateway|liveshop-catalog|liveshop-trade|liveshop-live|liveshop-protocol) ;;
     *) printf 'Unsupported dependency repository: %s\n' "$repository" >&2; exit 1 ;;
   esac
 

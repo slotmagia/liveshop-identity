@@ -26,7 +26,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-      additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../protocol, platform-protocol: ../../../../liveshop-platform/protocol}
+      additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../../liveshop-protocol/identity, platform-protocol: ../../../../liveshop-protocol/platform}
     entrypoint: ["/app/identity-migrate"]
     command:
       [
@@ -42,7 +42,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-      additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../protocol, platform-protocol: ../../../../liveshop-platform/protocol}
+      additional_contexts: {kernel: ../../../../kernel-go, protocol: ../../../../liveshop-protocol/identity, platform-protocol: ../../../../liveshop-protocol/platform}
     command: ["-config", "/app/configs/identity.compose.yaml"]
     ports: ["127.0.0.1:18092:18092"]
     volumes: ["grpc-certs:/run/grpc:ro"]

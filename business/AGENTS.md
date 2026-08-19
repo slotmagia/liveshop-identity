@@ -1,6 +1,6 @@
 # Identity 工程规则
 
-- 本仓库分为两个平级单元：`../protocol`（对外发布的线协议，独立 Go module）和本目录 `business`（实现与前端贡献）。`business` 依赖 `protocol`，反向依赖禁止。
+- 本模块线协议在兄弟仓 `liveshop-protocol/identity/`（独立 Go module）。本目录 `business` 只放实现与前端贡献。`business` 依赖该 protocol 子目录，反向依赖禁止。
 - 本仓库是 Identity 发布模块，拥有 `identity/subscription/customer/fulfillment/risk/customer_service/merchant_governance` capability 的事实、同一个数据库和公开契约；`protocol` 只放这些本模块 capability 的协议，禁止放入其他发布模块的 Proto。
 - 开发前读取仓库根 `docs/开发规范.md`、`backend/AGENTS.md`、`backend/docs/文档目录.md` 和 `backend/docs/domain/`。分层总册就是 `docs/开发规范.md`；本仓库操作手册是 `backend/docs/模块开发规范.md`。
 - 依赖方向固定为 `application/<surface>` → `capability/<name>`/`biz` → 仓储端口 ← `data/<name>`。目录结构与分层依赖的唯一事实源是本模块 `backend/internal/identity/capability/README.md`。

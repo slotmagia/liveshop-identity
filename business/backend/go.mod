@@ -51,6 +51,6 @@ require (
 // The sibling protocol module is not published yet. Without this the first
 // import of it would fail `go mod tidy`, which the verification scripts run
 // with the workspace disabled.
-replace github.com/lvtuopen-ai/liveshop-identity/protocol => ../../protocol
+replace github.com/lvtuopen-ai/liveshop-identity/protocol => ../../../liveshop-protocol/identity
 
-replace github.com/liveshop-platform/contracts => ../../../liveshop-platform/protocol
+replace github.com/liveshop-platform/contracts => ../../../liveshop-protocol/platform

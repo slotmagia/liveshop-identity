@@ -22,7 +22,7 @@ variables:
   PLATFORM_REGISTRY_URL: "http://127.0.0.1:18082/internal/v1/module-registry"
   MODULE_NAME: "liveshop-identity"
   MODULE_ID: "identity"
-  DEPENDENCY_REPOSITORIES: "kernel-go liveshop-platform"
+  DEPENDENCY_REPOSITORIES: "kernel-go liveshop-platform liveshop-protocol"
   BACKEND_PORT: "18092"
   READINESS_URL: "http://127.0.0.1:18092/readyz"
   READINESS_MODE: "success"
