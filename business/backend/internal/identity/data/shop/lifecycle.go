@@ -47,6 +47,9 @@ VALUES(?,?,?,?,?,?,?,?,?,1)`, shopID, command.MerchantID, model.ShopCodeForID(sh
 	if err := grantOwnerShop(ctx, tx, command.MerchantID, shopID); err != nil {
 		return model.Shop{}, false, err
 	}
+	if err := insertShopLocale(ctx, tx, command.MerchantID, shopID, command.DefaultLocale, 0); err != nil {
+		return model.Shop{}, false, err
+	}
 	saved, err := readShop(ctx, tx, command.MerchantID, shopID, false)
 	if err != nil {
 		return model.Shop{}, false, err

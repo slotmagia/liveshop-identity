@@ -1136,3 +1136,31 @@ type CustomerAccountDeleteResult struct {
 	Version  uint64
 	Replayed bool
 }
+
+type LanguageItem struct {
+	Locale            string `json:"locale"`
+	Label             string `json:"label"`
+	Published         bool   `json:"published"`
+	IsDefault         bool   `json:"isDefault"`
+	SortOrder         int    `json:"sortOrder"`
+	CompletionPercent int    `json:"completionPercent"`
+	PlatformStatus    string `json:"platformStatus"`
+}
+
+type Languages struct {
+	DefaultLocale string         `json:"defaultLocale"`
+	Version       uint64         `json:"version"`
+	Items         []LanguageItem `json:"items"`
+}
+
+type UpdateLanguages struct {
+	CommandKey       string
+	ExpectedVersion  uint64
+	DefaultLocale    string
+	PublishedLocales []string
+}
+
+type LanguagesMutation struct {
+	Languages Languages
+	Replayed  bool
+}

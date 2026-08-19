@@ -174,6 +174,67 @@ func acceptRoutableShop(value model.Shop) (model.Shop, error) {
 	return value, nil
 }
 
+func (d *Directory) Languages(ctx context.Context, merchantID, shopID int64) (model.Languages, error) {
+	if err := d.ready(); err != nil {
+		return model.Languages{}, err
+	}
+	if merchantID <= 0 {
+		return model.Languages{}, model.ErrInvalidMerchantID
+	}
+	if shopID <= 0 {
+		return model.Languages{}, model.ErrInvalidShop
+	}
+	value, err := d.repository.GetLanguages(ctx, merchantID, shopID)
+	if err != nil {
+		return model.Languages{}, err
+	}
+	if value.MerchantID != merchantID || value.ShopID != shopID {
+		return model.Languages{}, model.ErrInvalidShop
+	}
+	return value, nil
+}
+
+func (d *Directory) ReplaceLanguages(ctx context.Context, command model.ReplaceLanguagesCommand) (model.Languages, bool, error) {
+	if err := d.ready(); err != nil {
+		return model.Languages{}, false, err
+	}
+	normalized, err := command.Normalize()
+	if err != nil {
+		return model.Languages{}, false, err
+	}
+	value, replayed, err := d.repository.ReplaceLanguages(ctx, normalized)
+	if err != nil {
+		return model.Languages{}, false, err
+	}
+	if value.MerchantID != normalized.MerchantID || value.ShopID != normalized.ShopID {
+		return model.Languages{}, false, model.ErrInvalidShop
+	}
+	return value, replayed, nil
+}
+
+func (d *Directory) PublishedLocales(ctx context.Context, shopID int64) (string, []string, error) {
+	if err := d.ready(); err != nil {
+		return model.SourceLocale, []string{model.SourceLocale}, err
+	}
+	if shopID <= 0 {
+		return model.SourceLocale, []string{model.SourceLocale}, nil
+	}
+	defaultLocale, published, err := d.repository.PublishedLocales(ctx, shopID)
+	if err != nil {
+		return model.SourceLocale, []string{model.SourceLocale}, err
+	}
+	defaultLocale, published = model.PublishedFromRows(defaultLocale, localeRows(published))
+	return defaultLocale, published, nil
+}
+
+func localeRows(published []string) []model.LocaleRow {
+	rows := make([]model.LocaleRow, 0, len(published))
+	for index, locale := range published {
+		rows = append(rows, model.LocaleRow{Locale: locale, Published: true, SortOrder: index})
+	}
+	return rows
+}
+
 func acceptManagedShop(value model.Shop, replayed bool, err error) (model.Shop, bool, error) {
 	if err != nil {
 		return model.Shop{}, false, err

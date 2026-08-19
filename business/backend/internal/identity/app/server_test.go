@@ -287,6 +287,25 @@ func (stubShopDirectory) CloseShop(_ context.Context, command shopmodel.CloseCom
 		Currency: "CNY", Status: shopmodel.StatusClosed, Version: command.ExpectedVersion + 1,
 	}, false, nil
 }
+func (stubShopDirectory) GetLanguages(_ context.Context, merchantID, shopID int64) (shopmodel.Languages, error) {
+	return shopmodel.Languages{
+		MerchantID: merchantID, ShopID: shopID, DefaultLocale: "zh-CN", Version: 1,
+		Items: shopmodel.DefaultLanguageRows("zh-CN"),
+	}, nil
+}
+func (stubShopDirectory) ReplaceLanguages(_ context.Context, command shopmodel.ReplaceLanguagesCommand) (shopmodel.Languages, bool, error) {
+	items := make([]shopmodel.LocaleRow, 0, len(command.PublishedLocales))
+	for index, locale := range command.PublishedLocales {
+		items = append(items, shopmodel.LocaleRow{Locale: locale, Published: true, SortOrder: index})
+	}
+	return shopmodel.Languages{
+		MerchantID: command.MerchantID, ShopID: command.ShopID, DefaultLocale: command.DefaultLocale,
+		Version: command.ExpectedVersion + 1, Items: items,
+	}, false, nil
+}
+func (stubShopDirectory) PublishedLocales(context.Context, int64) (string, []string, error) {
+	return "zh-CN", []string{"zh-CN"}, nil
+}
 
 type stubShopCategories struct{}
 
@@ -1522,6 +1541,33 @@ func TestMerchShippingDeliveryRequireDedicatedReadPermission(t *testing.T) {
 	status, body := callJSON(t, http.MethodPost, create, "merch", manager, `{"commandKey":"rule-create-0001","shopId":3001,"name":"美国标准","regions":"US","feeFen":800,"minDays":3,"maxDays":7}`)
 	if status != http.StatusOK || !strings.Contains(body, `"name":"美国标准"`) {
 		t.Fatalf("manage create status=%d body=%s", status, body)
+	}
+}
+
+func TestMerchLanguagesRequireDedicatedReadPermission(t *testing.T) {
+	issuer, keys := testKeys(t)
+	base := startServer(t, keys)
+	endpoint := base + "/merch/identity/languages"
+	granted := signMerchShop(t, issuer, "/merch/identity/languages", 2001, 3001, "identity.language.read")
+	if status, body := call(t, endpoint, "merch", granted); status != http.StatusOK {
+		t.Fatalf("granted status=%d body=%s", status, body)
+	}
+	wrong := signMerchShop(t, issuer, "/merch/identity/languages", 2001, 3001, "identity.shipping.read")
+	if status, body := call(t, endpoint, "merch", wrong); status != http.StatusForbidden {
+		t.Fatalf("wrong permission status=%d body=%s", status, body)
+	}
+	outOfScope := signMerchShop(t, issuer, "/merch/identity/shipping-delivery", 2001, 3001, "identity.language.read")
+	if status, body := call(t, endpoint, "merch", outOfScope); status != http.StatusForbidden {
+		t.Fatalf("out of scope status=%d body=%s", status, body)
+	}
+	readOnly := signMerchShop(t, issuer, "/merch/identity/languages", 2001, 3001, "identity.language.read")
+	if status, body := callJSON(t, http.MethodPut, endpoint, "merch", readOnly, `{"commandKey":"languages-0001","expectedVersion":1,"defaultLocale":"zh-CN","publishedLocales":["zh-CN"]}`); status != http.StatusForbidden {
+		t.Fatalf("read-only update status=%d body=%s", status, body)
+	}
+	manager := signMerchShop(t, issuer, "/merch/identity/languages", 2001, 3001, "identity.language.manage")
+	status, body := callJSON(t, http.MethodPut, endpoint, "merch", manager, `{"commandKey":"languages-0001","expectedVersion":1,"defaultLocale":"zh-CN","publishedLocales":["zh-CN","en-US"]}`)
+	if status != http.StatusOK || !strings.Contains(body, `"defaultLocale":"zh-CN"`) {
+		t.Fatalf("manage update status=%d body=%s", status, body)
 	}
 }
 

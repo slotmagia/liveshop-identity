@@ -18,6 +18,9 @@ type Grants interface {
 	LiveProviders(context.Context, int64) (appmodel.MerchantLiveProviders, error)
 	PutLiveProviders(context.Context, appmodel.PutMerchantLiveProviders) (appmodel.MerchantLiveProviders, error)
 	EdgeSnapshot(context.Context) (EdgeSnapshot, error)
+	I18nLocales(context.Context) ([]I18nLocale, error)
+	I18nEntities(context.Context) ([]I18nEntity, error)
+	I18nTexts(ctx context.Context, entityType, locale string, merchantID, shopID int64) ([]I18nPublishedText, error)
 }
 
 type EdgeSnapshot struct {

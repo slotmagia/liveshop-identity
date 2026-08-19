@@ -129,6 +129,9 @@ VALUES(?,?,?,?,'zh-CN','CNY','ACTIVE',1)`, shopID, merchantID, shopCode, command
 		}
 		return model.CreateResult{}, false, fmt.Errorf("identity merchant default shop: %w", err)
 	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO identity_shop_locale(merchant_id,shop_id,locale,published,sort_order) VALUES(?,?,'zh-CN',1,0)`, merchantID, shopID); err != nil {
+		return model.CreateResult{}, false, fmt.Errorf("identity merchant default shop locale: %w", err)
+	}
 	subject := model.SubjectForMerchant(merchantID)
 	if _, err := tx.ExecContext(ctx, `INSERT INTO identity_subject(subject,realm,principal_type,display_name,status,version)
 VALUES(?,'MERCHANT','MERCHANT_OWNER',?,'ACTIVE',1)`, subject, command.Name); err != nil {

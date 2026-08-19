@@ -67,5 +67,7 @@ func RegisterHTTP(root *ghttp.RouterGroup, deps Deps) {
 	bind("identity.shipment.manage", surfacehttp.NewShipmentWrite(deps.Application))
 	bind("identity.shipping.read", surfacehttp.NewShippingQuery(deps.Application))
 	bind("identity.shipping.manage", surfacehttp.NewShippingWrite(deps.Application))
+	bind("identity.language.read", surfacehttp.NewLanguagesQuery(deps.Application))
+	bind("identity.language.manage", surfacehttp.NewLanguagesWrite(deps.Application))
 	bind("identity.customer-account.manage", surfacehttp.NewCustomerAccount(deps.Application))
 }

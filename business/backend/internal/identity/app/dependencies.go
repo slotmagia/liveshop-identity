@@ -163,7 +163,7 @@ func NewDependencies(ctx context.Context, settings config.Config) (*Dependencies
 		_ = database.Close()
 		return nil, err
 	}
-	authEndpoint, err := authendpoint.New(authentication, directory, accessIssuer, accessVerifier, settings.AccessIdentity)
+	authEndpoint, err := authendpoint.New(authentication, directory, shops, accessIssuer, accessVerifier, settings.AccessIdentity)
 	if err != nil {
 		_ = database.Close()
 		return nil, err

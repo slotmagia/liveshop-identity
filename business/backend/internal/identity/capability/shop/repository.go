@@ -18,4 +18,7 @@ type Repository interface {
 	UpdateShop(context.Context, model.UpdateCommand) (model.Shop, bool, error)
 	SetShopEnabled(context.Context, model.SetEnabledCommand) (model.Shop, bool, error)
 	CloseShop(context.Context, model.CloseCommand) (model.Shop, bool, error)
+	GetLanguages(context.Context, int64, int64) (model.Languages, error)
+	ReplaceLanguages(context.Context, model.ReplaceLanguagesCommand) (model.Languages, bool, error)
+	PublishedLocales(context.Context, int64) (string, []string, error)
 }

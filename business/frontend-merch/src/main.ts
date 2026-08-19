@@ -20,6 +20,7 @@ import { renderAftersales } from './pages/aftersales'
 import { renderCustomerAccounts } from './pages/customer-accounts'
 import { renderLogistics } from './pages/logistics'
 import { renderShippingDelivery } from './pages/shipping-delivery'
+import { renderLanguages } from './pages/languages'
 import { renderPlaceholder } from '../../ui/placeholder'
 import './style.css'
 
@@ -52,6 +53,7 @@ void connectToHost()
     if (context.contributionId === 'identity.merch.aftersale') return renderAftersales(root, createHttpClient(context))
     if (context.contributionId === 'identity.merch.logistics') return renderLogistics(root, createHttpClient(context), context)
     if (context.contributionId === 'identity.merch.settings-shipping-delivery') return renderShippingDelivery(root, createHttpClient(context), context)
+    if (context.contributionId === 'identity.merch.languages') return renderLanguages(root, createHttpClient(context), context)
     if (context.contributionId === 'identity.merch.customer-accounts' || context.contributionId === 'identity.merch.live-customer-service') {
       return renderCustomerAccounts(root, createHttpClient(context))
     }

@@ -96,6 +96,25 @@ func (stubShopRepo) CloseShop(_ context.Context, command shopmodel.CloseCommand)
 		Currency: "CNY", Status: shopmodel.StatusClosed, Version: command.ExpectedVersion + 1,
 	}, false, nil
 }
+func (stubShopRepo) GetLanguages(_ context.Context, merchantID, shopID int64) (shopmodel.Languages, error) {
+	return shopmodel.Languages{
+		MerchantID: merchantID, ShopID: shopID, DefaultLocale: "zh-CN", Version: 1,
+		Items: shopmodel.DefaultLanguageRows("zh-CN"),
+	}, nil
+}
+func (stubShopRepo) ReplaceLanguages(_ context.Context, command shopmodel.ReplaceLanguagesCommand) (shopmodel.Languages, bool, error) {
+	items := make([]shopmodel.LocaleRow, 0, len(command.PublishedLocales))
+	for index, locale := range command.PublishedLocales {
+		items = append(items, shopmodel.LocaleRow{Locale: locale, Published: true, SortOrder: index})
+	}
+	return shopmodel.Languages{
+		MerchantID: command.MerchantID, ShopID: command.ShopID, DefaultLocale: command.DefaultLocale,
+		Version: command.ExpectedVersion + 1, Items: items,
+	}, false, nil
+}
+func (stubShopRepo) PublishedLocales(context.Context, int64) (string, []string, error) {
+	return "zh-CN", []string{"zh-CN"}, nil
+}
 
 type stubPolicyRepo struct {
 	items []shopmodel.Policy

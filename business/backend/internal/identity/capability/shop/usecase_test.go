@@ -61,6 +61,15 @@ func (stubRepository) SetShopEnabled(context.Context, model.SetEnabledCommand) (
 func (stubRepository) CloseShop(context.Context, model.CloseCommand) (model.Shop, bool, error) {
 	return model.Shop{}, false, nil
 }
+func (s stubRepository) GetLanguages(_ context.Context, merchantID, shopID int64) (model.Languages, error) {
+	return model.Languages{MerchantID: merchantID, ShopID: shopID, DefaultLocale: model.SourceLocale, Version: 1, Items: model.DefaultLanguageRows(model.SourceLocale)}, nil
+}
+func (stubRepository) ReplaceLanguages(_ context.Context, command model.ReplaceLanguagesCommand) (model.Languages, bool, error) {
+	return model.Languages{MerchantID: command.MerchantID, ShopID: command.ShopID, DefaultLocale: command.DefaultLocale, Version: command.ExpectedVersion + 1}, false, nil
+}
+func (stubRepository) PublishedLocales(context.Context, int64) (string, []string, error) {
+	return model.SourceLocale, []string{model.SourceLocale}, nil
+}
 
 func TestDirectoryRequiresRealMerchantID(t *testing.T) {
 	directory := NewDirectory(stubRepository{})

@@ -17,6 +17,8 @@ import (
 
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/biz/model"
+	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/shop"
+	shopmodel "github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/capability/shop/model"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/common/middleware"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/common/web"
 	"github.com/lvtuopen-ai/liveshop-identity/business/backend/internal/identity/config"
@@ -25,6 +27,7 @@ import (
 type Endpoint struct {
 	auth       *biz.Authentication
 	directory  *biz.Directory
+	shops      *shop.Directory
 	issuer     *accessidentity.Issuer
 	verifier   *accessidentity.Verifier
 	settings   config.AccessIdentity
@@ -32,7 +35,7 @@ type Endpoint struct {
 	refreshTTL time.Duration
 }
 
-func New(auth *biz.Authentication, directory *biz.Directory, issuer *accessidentity.Issuer, verifier *accessidentity.Verifier, settings config.AccessIdentity) (*Endpoint, error) {
+func New(auth *biz.Authentication, directory *biz.Directory, shops *shop.Directory, issuer *accessidentity.Issuer, verifier *accessidentity.Verifier, settings config.AccessIdentity) (*Endpoint, error) {
 	accessTTL, err := settings.AccessDuration()
 	if err != nil {
 		return nil, err
@@ -44,7 +47,7 @@ func New(auth *biz.Authentication, directory *biz.Directory, issuer *accessident
 	if auth == nil || directory == nil || issuer == nil || verifier == nil {
 		return nil, model.ErrUnavailable
 	}
-	return &Endpoint{auth: auth, directory: directory, issuer: issuer, verifier: verifier, settings: settings, accessTTL: accessTTL, refreshTTL: refreshTTL}, nil
+	return &Endpoint{auth: auth, directory: directory, shops: shops, issuer: issuer, verifier: verifier, settings: settings, accessTTL: accessTTL, refreshTTL: refreshTTL}, nil
 }
 
 func Register(root *ghttp.RouterGroup, endpoint *Endpoint) {
@@ -64,9 +67,12 @@ type LoginReq struct {
 	ChallengeID string `json:"challengeId"`
 }
 type LoginRes struct {
-	AccessToken string    `json:"accessToken"`
-	ExpiresIn   int64     `json:"expiresIn"`
-	Principal   Principal `json:"principal"`
+	AccessToken      string    `json:"accessToken"`
+	ExpiresIn        int64     `json:"expiresIn"`
+	Principal        Principal `json:"principal"`
+	DefaultLocale    string    `json:"defaultLocale,omitempty"`
+	PublishedLocales []string  `json:"publishedLocales,omitempty"`
+	SuggestedLocale  string    `json:"suggestedLocale,omitempty"`
 }
 
 type GuestReq struct {
@@ -110,11 +116,14 @@ type Principal struct {
 	MerchantID     int64  `json:"merchantId,omitempty"`
 }
 type Context struct {
-	OrganizationID  int64  `json:"organizationId,omitempty"`
-	MerchantID      int64  `json:"merchantId,omitempty"`
-	ShopID          int64  `json:"shopId,omitempty"`
-	ContextVersion  uint64 `json:"contextVersion"`
-	IdentityVersion uint64 `json:"identityVersion"`
+	OrganizationID   int64    `json:"organizationId,omitempty"`
+	MerchantID       int64    `json:"merchantId,omitempty"`
+	ShopID           int64    `json:"shopId,omitempty"`
+	ContextVersion   uint64   `json:"contextVersion"`
+	IdentityVersion  uint64   `json:"identityVersion"`
+	DefaultLocale    string   `json:"defaultLocale,omitempty"`
+	PublishedLocales []string `json:"publishedLocales,omitempty"`
+	SuggestedLocale  string   `json:"suggestedLocale,omitempty"`
 }
 
 func (e *Endpoint) Login(ctx context.Context, request *LoginReq) (*LoginRes, error) {
@@ -144,7 +153,7 @@ func (e *Endpoint) Login(ctx context.Context, request *LoginReq) (*LoginRes, err
 		return nil, authFailure(err)
 	}
 	e.setRefreshCookie(requestContext, realm, refresh, now.Add(e.refreshTTL))
-	return e.loginResponse(result, strings.TrimSpace(request.Username))
+	return e.loginResponse(ctx, result, strings.TrimSpace(request.Username))
 }
 
 func (e *Endpoint) Guest(ctx context.Context, request *GuestReq) (*GuestRes, error) {
@@ -164,7 +173,7 @@ func (e *Endpoint) Guest(ctx context.Context, request *GuestReq) (*GuestRes, err
 		return nil, authFailure(err)
 	}
 	e.setRefreshCookie(requestContext, principal.RealmCustomer, refresh, now.Add(e.refreshTTL))
-	return e.loginResponse(result, "")
+	return e.loginResponse(ctx, result, "")
 }
 
 func (e *Endpoint) Refresh(ctx context.Context, _ *RefreshReq) (*RefreshRes, error) {
@@ -182,7 +191,7 @@ func (e *Endpoint) Refresh(ctx context.Context, _ *RefreshReq) (*RefreshRes, err
 		return nil, unauthorized()
 	}
 	e.setRefreshCookie(request, realm, rotated, time.Now().Add(e.refreshTTL))
-	return e.loginResponse(result, "")
+	return e.loginResponse(ctx, result, "")
 }
 
 func (e *Endpoint) Logout(ctx context.Context, _ *LogoutReq) (*LogoutRes, error) {
@@ -204,7 +213,7 @@ func (e *Endpoint) Me(ctx context.Context, _ *MeReq) (*MeRes, error) {
 	if err != nil {
 		return nil, unauthorized()
 	}
-	return &MeRes{Principal: principalFromClaims(claims, ""), Context: contextFromClaims(claims)}, nil
+	return &MeRes{Principal: principalFromClaims(claims, ""), Context: e.contextFromClaims(ctx, claims)}, nil
 }
 
 func (e *Endpoint) Switch(ctx context.Context, request *SwitchReq) (*SwitchRes, error) {
@@ -217,10 +226,10 @@ func (e *Endpoint) Switch(ctx context.Context, request *SwitchReq) (*SwitchRes, 
 	if err != nil {
 		return nil, web.Failure(err)
 	}
-	return e.loginResponse(result, "")
+	return e.loginResponse(ctx, result, "")
 }
 
-func (e *Endpoint) loginResponse(session biz.AuthenticatedSession, username string) (*LoginRes, error) {
+func (e *Endpoint) loginResponse(ctx context.Context, session biz.AuthenticatedSession, username string) (*LoginRes, error) {
 	claims := accessidentity.Claims{Subject: session.Subject.ID, Realm: session.Subject.Realm, PrincipalType: session.Subject.PrincipalType,
 		SessionID: session.SessionID, OrganizationID: session.Organization.ID, MerchantID: session.Selected.MerchantID,
 		ShopID:         session.Selected.ShopID,
@@ -232,7 +241,12 @@ func (e *Endpoint) loginResponse(session biz.AuthenticatedSession, username stri
 	if err != nil {
 		return nil, web.Failure(err)
 	}
-	return &LoginRes{AccessToken: token, ExpiresIn: int64(e.accessTTL.Seconds()), Principal: Principal{Realm: session.Subject.Realm.String(), PrincipalType: session.Subject.PrincipalType.String(), Subject: session.Subject.ID, Username: username, DisplayName: session.Subject.DisplayName, OrganizationID: session.Organization.ID, MerchantID: claims.MerchantID}}, nil
+	defaultLocale, published := e.shopLocales(ctx, claims.ShopID)
+	return &LoginRes{
+		AccessToken: token, ExpiresIn: int64(e.accessTTL.Seconds()),
+		Principal: Principal{Realm: session.Subject.Realm.String(), PrincipalType: session.Subject.PrincipalType.String(), Subject: session.Subject.ID, Username: username, DisplayName: session.Subject.DisplayName, OrganizationID: session.Organization.ID, MerchantID: claims.MerchantID},
+		DefaultLocale: defaultLocale, PublishedLocales: published,
+	}, nil
 }
 
 func (e *Endpoint) accessClaims(request *ghttp.Request) (accessidentity.Claims, error) {
@@ -292,8 +306,19 @@ func guestSurface(surface string) bool {
 func principalFromClaims(claims accessidentity.Claims, username string) Principal {
 	return Principal{Realm: claims.Realm.String(), PrincipalType: claims.PrincipalType.String(), Subject: claims.Subject, Username: username, OrganizationID: claims.OrganizationID, MerchantID: claims.MerchantID}
 }
-func contextFromClaims(claims accessidentity.Claims) Context {
-	return Context{OrganizationID: claims.OrganizationID, MerchantID: claims.MerchantID, ShopID: claims.ShopID, ContextVersion: claims.ContextVersion, IdentityVersion: claims.IdentityVersion}
+func (e *Endpoint) contextFromClaims(ctx context.Context, claims accessidentity.Claims) Context {
+	defaultLocale, published := e.shopLocales(ctx, claims.ShopID)
+	return Context{OrganizationID: claims.OrganizationID, MerchantID: claims.MerchantID, ShopID: claims.ShopID, ContextVersion: claims.ContextVersion, IdentityVersion: claims.IdentityVersion, DefaultLocale: defaultLocale, PublishedLocales: published}
+}
+func (e *Endpoint) shopLocales(ctx context.Context, shopID int64) (string, []string) {
+	if e == nil || e.shops == nil || shopID <= 0 {
+		return "", nil
+	}
+	defaultLocale, published, err := e.shops.PublishedLocales(ctx, shopID)
+	if err != nil || defaultLocale == "" {
+		return shopmodel.SourceLocale, []string{shopmodel.SourceLocale}
+	}
+	return defaultLocale, published
 }
 func secureToken() string {
 	value := make([]byte, 24)

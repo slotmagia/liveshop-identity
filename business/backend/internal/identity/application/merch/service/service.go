@@ -95,4 +95,6 @@ type Merch interface {
 	CustomerAccounts(context.Context, appmodel.CustomerAccountQuery) (appmodel.CustomerAccountPage, error)
 	SaveCustomerAccount(context.Context, appmodel.SaveCustomerAccount) (appmodel.CustomerAccountResult, error)
 	DeleteCustomerAccount(context.Context, appmodel.DeleteCustomerAccount) (appmodel.CustomerAccountDeleteResult, error)
+	Languages(ctx context.Context) (appmodel.Languages, error)
+	UpdateLanguages(ctx context.Context, input appmodel.UpdateLanguages) (appmodel.LanguagesMutation, error)
 }
